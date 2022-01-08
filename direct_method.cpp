@@ -8,12 +8,10 @@ using namespace std;
 typedef vector<Eigen::Vector2d, Eigen::aligned_allocator<Eigen::Vector2d>> VecVector2d;
 
 // Camera intrinsics
-static double fx = 718.856, fy = 718.856, cx = 607.1928, cy = 185.2157;
-// baseline
-static double baseline = 0.573;
+//double fx = 718.856, fy = 718.856, cx = 607.1928, cy = 185.2157;
+double fx = 726.28741455078, fy = 726.28741455078, cx = 354.6496887207, cy = 186.46566772461;
 // read files
-// boost::format fmt_others("./%06d.png");    // other files
-
+double baseline = 0.573;
 // useful typedefs
 typedef Eigen::Matrix<double, 6, 6> Matrix6d;
 typedef Eigen::Matrix<double, 2, 6> Matrix26d;
@@ -110,40 +108,83 @@ float GetPixelValue(const cv::Mat &img, float x, float y)
 int main()
 {
     cv::Mat color_img1 = cv::imread("./color_img1.png", cv::IMREAD_GRAYSCALE);
+    cv::Mat color_img2 = cv::imread("./color_img2.png", cv::IMREAD_GRAYSCALE);
     cv::Mat depth_img1 = cv::imread("./depth_img1.png", cv::IMREAD_ANYDEPTH);
-    cout << "images read" << endl;
-
-    // let's randomly pick pixels in the first image and generate some 3d points in the first image's frame
-    cv::RNG rng; //Random Number Generator
-    int nPoints = 2000;
-    int boarder = 20;
-    VecVector2d pixels_ref;
-    vector<double> depth_ref;
+    cv::Mat depth_img2 = cv::imread("./depth_img2.png", cv::IMREAD_ANYDEPTH);
 
     // generate pixels in ref and load depth data
-    for (int i = 0; i < nPoints; i++)
+    VecVector2d pixels_ref;
+    vector<double> depth_ref1, depth_ref2;
+    double min_depth = 1.0;
+    double max_depth = 255.0;
+    for (int k = 0; k < color_img1.rows; k++)
     {
-        int x = rng.uniform(boarder, color_img1.cols - boarder); // don't pick pixels close to boarder
-        int y = rng.uniform(boarder, color_img1.rows - boarder); // don't pick pixels close to boarder
-        double depth = depth_img1.at<uchar>(y, x);
-        depth_ref.push_back(depth);
-        pixels_ref.push_back(Eigen::Vector2d(x, y));
+        for (int h = 0; h < color_img1.cols; h++)
+        {
+            double depth1 = depth_img1.at<uchar>(k, h);
+            if (depth1 < min_depth || depth1 > max_depth)
+                continue;
+            depth_ref1.push_back(depth1);
+            pixels_ref.push_back(Eigen::Vector2d(k, h));
+        }
     }
+
+    // for (int i = 0; i < nPoints; i++)
+    // {
+    //     int x = rng.uniform(boarder, color_img1.cols - boarder); // don't pick pixels close to boarder
+    //     int y = rng.uniform(boarder, color_img1.rows - boarder); // don't pick pixels close to boarder
+    //     double depth = depth_img1.at<uchar>(y, x);
+    //     depth_ref.push_back(depth);
+    //     pixels_ref.push_back(Eigen::Vector2d(x, y));
+    // }
 
     std::cout << "points generated" << endl;
 
     // estimates 01~05.png's pose using this information
     Sophus::SE3d T_cur_ref;
 
-    for (int i = 1; i < 2; i++)
-    {
-        cv::Mat color_img2 = cv::imread("./color_img2.png", cv::IMREAD_GRAYSCALE);
-        cout << "calculate pose" << endl;
-        // try single layer by uncomment this line
-        // DirectPoseEstimationSingleLayer(left_img, img, pixels_ref, depth_ref, T_cur_ref);
-        DirectPoseEstimationMultiLayer(color_img1, color_img2, pixels_ref, depth_ref, T_cur_ref);
-    }
-    return 0;
+    // cv::Mat depth_mat = disparity_mat;
+    // for (int i = 0; i < disparity_mat.rows; i++)
+    // {
+    //     for (int j = 0; j < disparity_mat.cols; j++)
+    //     {
+    //         int disparity = disparity_mat.at<uchar>(i, j);
+    //         double depth = fx * baseline / disparity; // you know this is disparity to depth
+    //         uchar value = (uchar)depth;
+    //         depth_mat.ptr<uchar>(i)[j] = value;
+    //     }
+    // }
+    // cv::imshow("img", color_img1);
+    // cv::waitKey(0);
+    // cv::imshow("img", color_img2);
+    // cv::waitKey(0);
+    // cv::imshow("img", depth_img1);
+    // cv::waitKey(0);
+    // cv::imshow("img", depth_mat);
+    // cv::waitKey(0);
+    // cout<<"channel of left: "<<left_mat.channels()<<endl;
+    // cout<<"channel of disparity: "<<disparity_mat.channels()<<endl;
+    // cout<<"channel of color_img1: "<<color_img1.channels()<<endl;
+    // cout<<"channel of depth_img1: "<<depth_img1.channels()<<endl;
+    // cout<<"channel of color_img2: "<<color_img2.channels()<<endl;
+    // cout<<"format of left: "<<left_mat.type()<<endl;
+    // cout<<"format of disparity: "<<disparity_mat.type()<<endl;
+    // cout<<"format of color_img1: "<<color_img1.type()<<endl;
+    // cout<<"format of depth_img1: "<<depth_img1.type()<<endl;
+    // cout<<"format of color_img2: "<<color_img2.type()<<endl;
+    // for (int k = 0; k < depth_img1.rows; k++)
+    // {
+    //     for (int h = 0; h < depth_img1.cols; h++)
+    //     {
+    //         uint8_t *data = (uint8_t *)depth_img1.data;
+    //         std::cout << unsigned(data[h + depth_img1.step * k]) << " ";
+    //     }
+    //     std::cout << std::endl;
+    // }
+
+    // try single layer by uncomment this line
+    // DirectPoseEstimationSingleLayer(color_img1, color_img2, pixels_ref, depth_ref, T_cur_ref);
+    DirectPoseEstimationMultiLayer(color_img1, color_img2, pixels_ref, depth_ref1, T_cur_ref);
 }
 
 void DirectPoseEstimationSingleLayer(
@@ -158,18 +199,19 @@ void DirectPoseEstimationSingleLayer(
     double cost = 0, lastCost = 0;
     auto t1 = chrono::steady_clock::now();
     JacobianAccumulator jaco_accu(img1, img2, px_ref, depth_ref, T21);
-    cout << "Jacobian Accumulator generated" << endl;
+    // cout << "Jacobian Accumulator generated" << endl;
 
     for (int iter = 0; iter < iterations; iter++)
     {
         jaco_accu.reset();
+        // cout << "Jacobian Accumulator reset" << endl;
         cv::parallel_for_(cv::Range(0, px_ref.size()), std::bind(&JacobianAccumulator::accumulate_jacobian, &jaco_accu, std::placeholders::_1)); // 多线程计算Jacobian,Hessian and b
+
         Matrix6d H = jaco_accu.hessian();
         Vector6d b = jaco_accu.bias();
 
         // solve update and put it into estimation
         Vector6d update = H.ldlt().solve(b);
-        ;
         T21 = Sophus::SE3d::exp(update) * T21;
         cost = jaco_accu.cost_func();
 
@@ -215,6 +257,7 @@ void DirectPoseEstimationSingleLayer(
                      cv::Scalar(0, 250, 0));
         }
     }
+    cv::namedWindow("current", cv::WINDOW_NORMAL); // 自适应窗口大小
     cv::imshow("current", img2_show);
     cv::waitKey();
 }
@@ -231,20 +274,24 @@ void JacobianAccumulator::accumulate_jacobian(const cv::Range &range)
 
     for (size_t i = range.start; i < range.end; i++)
     {
+        // cout << "points loop ============" << endl;
 
         // compute the projection in the second image
-        Eigen::Vector3d point_ref =
-            depth_ref[i] * Eigen::Vector3d((px_ref[i][0] - cx) / fx, (px_ref[i][1] - cy) / fy, 1);
+        Eigen::Vector3d point_ref = depth_ref[i] * Eigen::Vector3d((px_ref[i][0] - cx) / fx, (px_ref[i][1] - cy) / fy, 1);
         Eigen::Vector3d point_cur = T21 * point_ref;
+
         if (point_cur[2] < 0) // depth invalid
             continue;
 
-        float u = fx * point_cur[0] / point_cur[2] + cx, v = fy * point_cur[1] / point_cur[2] + cy;
-        if (u < half_patch_size || u > img2.cols - half_patch_size || v < half_patch_size ||
-            v > img2.rows - half_patch_size)
-            continue;
+        float u = fx * point_cur[0] / point_cur[2] + cx, v = fy * point_cur[1] / point_cur[2] + cy; // pixel position in the second image calculated
+
+        if (u < half_patch_size || u > img2.cols - half_patch_size || v < half_patch_size || v > img2.rows - half_patch_size)
+            continue; // skip the points out of sight
 
         projection[i] = Eigen::Vector2d(u, v);
+
+        // cout << "pixel position in the second image calculated" << endl;
+
         double X = point_cur[0], Y = point_cur[1], Z = point_cur[2],
                Z2 = Z * Z, Z_inv = 1.0 / Z, Z2_inv = Z_inv * Z_inv;
         cnt_good++;
@@ -253,9 +300,8 @@ void JacobianAccumulator::accumulate_jacobian(const cv::Range &range)
         for (int x = -half_patch_size; x <= half_patch_size; x++)
             for (int y = -half_patch_size; y <= half_patch_size; y++)
             {
+                double error = GetPixelValue(img1, px_ref[i][0] + x, px_ref[i][1] + y) - GetPixelValue(img2, u + x, v + y);
 
-                double error = GetPixelValue(img1, px_ref[i][0] + x, px_ref[i][1] + y) -
-                               GetPixelValue(img2, u + x, v + y);
                 Matrix26d J_pixel_xi;
                 Eigen::Vector2d J_img_pixel;
 
@@ -285,6 +331,7 @@ void JacobianAccumulator::accumulate_jacobian(const cv::Range &range)
                 cost_tmp += error * error;
             }
     }
+    // cout << "points loop end here =============================================" << endl;
 
     if (cnt_good)
     {
@@ -328,7 +375,7 @@ void DirectPoseEstimationMultiLayer(
             pyr2.push_back(img2_pyr);
         }
     }
-    cout << "pyramid images Generated" << endl;
+    // cout << "pyramid images Generated" << endl;
 
     double fxG = fx, fyG = fy, cxG = cx, cyG = cy; // backup the old values
     for (int level = pyramids - 1; level >= 0; level--)
@@ -344,7 +391,7 @@ void DirectPoseEstimationMultiLayer(
         fy = fyG * scales[level];
         cx = cxG * scales[level];
         cy = cyG * scales[level];
-        cout << "into signal layer Direct method" << endl;
+        // cout << "into signal layer Direct method" << endl;
         DirectPoseEstimationSingleLayer(pyr1[level], pyr2[level], px_ref_pyr, depth_ref, T21);
     }
 }
