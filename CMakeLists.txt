@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8)
-project(ch8)
+project(RGBDDirectMethod)
 
 set(CMAKE_BUILD_TYPE "Release")
 add_definitions("-DENABLE_SSE")

@@ -10,8 +10,10 @@ typedef vector<Eigen::Vector2d, Eigen::aligned_allocator<Eigen::Vector2d>> VecVe
 // Camera intrinsics
 //double fx = 718.856, fy = 718.856, cx = 607.1928, cy = 185.2157;
 double fx = 726.28741455078, fy = 726.28741455078, cx = 354.6496887207, cy = 186.46566772461;
-// read files
-double baseline = 0.573;
+
+double min_depth = 1.0;
+double max_depth = 255.0;
+
 // useful typedefs
 typedef Eigen::Matrix<double, 6, 6> Matrix6d;
 typedef Eigen::Matrix<double, 2, 6> Matrix26d;
@@ -26,7 +28,8 @@ public:
         const cv::Mat &img2_,
         const VecVector2d &px_ref_,
         const vector<double> depth_ref_,
-        Sophus::SE3d &T21_) : img1(img1_), img2(img2_), px_ref(px_ref_), depth_ref(depth_ref_), T21(T21_)
+        const cv::Mat &depth_img2_,
+        Sophus::SE3d &T21_) : img1(img1_), img2(img2_), px_ref(px_ref_), depth_ref(depth_ref_), depth_img2(depth_img2_), T21(T21_)
     {
         projection = VecVector2d(px_ref.size(), Eigen::Vector2d(0, 0));
     }
@@ -57,6 +60,7 @@ public:
 private:
     const cv::Mat &img1;
     const cv::Mat &img2;
+    const cv::Mat &depth_img2;
     const VecVector2d &px_ref;
     const vector<double> depth_ref;
     Sophus::SE3d &T21;
@@ -73,6 +77,7 @@ void DirectPoseEstimationMultiLayer(
     const cv::Mat &img2,
     const VecVector2d &px_ref,
     const vector<double> depth_ref,
+    const cv::Mat &depth_img2,
     Sophus::SE3d &T21);
 
 void DirectPoseEstimationSingleLayer(
@@ -80,6 +85,7 @@ void DirectPoseEstimationSingleLayer(
     const cv::Mat &img2,
     const VecVector2d &px_ref,
     const vector<double> depth_ref,
+    const cv::Mat &depth_img2,
     Sophus::SE3d &T21);
 
 // 得到3D点后，在像素坐标中定位后，获取该像素的值
@@ -114,9 +120,7 @@ int main()
 
     // generate pixels in ref and load depth data
     VecVector2d pixels_ref;
-    vector<double> depth_ref1, depth_ref2;
-    double min_depth = 1.0;
-    double max_depth = 255.0;
+    vector<double> depth_ref;
     for (int k = 0; k < color_img1.rows; k++)
     {
         for (int h = 0; h < color_img1.cols; h++)
@@ -124,7 +128,7 @@ int main()
             double depth1 = depth_img1.at<uchar>(k, h);
             if (depth1 < min_depth || depth1 > max_depth)
                 continue;
-            depth_ref1.push_back(depth1);
+            depth_ref.push_back(depth1);
             pixels_ref.push_back(Eigen::Vector2d(k, h));
         }
     }
@@ -162,16 +166,10 @@ int main()
     // cv::waitKey(0);
     // cv::imshow("img", depth_mat);
     // cv::waitKey(0);
-    // cout<<"channel of left: "<<left_mat.channels()<<endl;
-    // cout<<"channel of disparity: "<<disparity_mat.channels()<<endl;
-    // cout<<"channel of color_img1: "<<color_img1.channels()<<endl;
-    // cout<<"channel of depth_img1: "<<depth_img1.channels()<<endl;
-    // cout<<"channel of color_img2: "<<color_img2.channels()<<endl;
-    // cout<<"format of left: "<<left_mat.type()<<endl;
-    // cout<<"format of disparity: "<<disparity_mat.type()<<endl;
-    // cout<<"format of color_img1: "<<color_img1.type()<<endl;
-    // cout<<"format of depth_img1: "<<depth_img1.type()<<endl;
-    // cout<<"format of color_img2: "<<color_img2.type()<<endl;
+    // cout<<"channel of color_img1: "<<color_img1.rows<<endl;
+    // cout<<"channel of depth_img1: "<<depth_img1.rows<<endl;
+    // cout<<"format of color_img1: "<<color_img1.cols<<endl;
+    // cout<<"format of depth_img1: "<<depth_img1.cols<<endl;
     // for (int k = 0; k < depth_img1.rows; k++)
     // {
     //     for (int h = 0; h < depth_img1.cols; h++)
@@ -184,7 +182,7 @@ int main()
 
     // try single layer by uncomment this line
     // DirectPoseEstimationSingleLayer(color_img1, color_img2, pixels_ref, depth_ref, T_cur_ref);
-    DirectPoseEstimationMultiLayer(color_img1, color_img2, pixels_ref, depth_ref1, T_cur_ref);
+    DirectPoseEstimationMultiLayer(color_img1, color_img2, pixels_ref, depth_ref, depth_img2, T_cur_ref);
 }
 
 void DirectPoseEstimationSingleLayer(
@@ -192,13 +190,14 @@ void DirectPoseEstimationSingleLayer(
     const cv::Mat &img2,
     const VecVector2d &px_ref,
     const vector<double> depth_ref,
+    const cv::Mat &depth_img2,
     Sophus::SE3d &T21)
 {
 
     const int iterations = 10;
     double cost = 0, lastCost = 0;
     auto t1 = chrono::steady_clock::now();
-    JacobianAccumulator jaco_accu(img1, img2, px_ref, depth_ref, T21);
+    JacobianAccumulator jaco_accu(img1, img2, px_ref, depth_ref, depth_img2, T21);
     // cout << "Jacobian Accumulator generated" << endl;
 
     for (int iter = 0; iter < iterations; iter++)
@@ -279,10 +278,8 @@ void JacobianAccumulator::accumulate_jacobian(const cv::Range &range)
         // compute the projection in the second image
         Eigen::Vector3d point_ref = depth_ref[i] * Eigen::Vector3d((px_ref[i][0] - cx) / fx, (px_ref[i][1] - cy) / fy, 1);
         Eigen::Vector3d point_cur = T21 * point_ref;
-
         if (point_cur[2] < 0) // depth invalid
             continue;
-
         float u = fx * point_cur[0] / point_cur[2] + cx, v = fy * point_cur[1] / point_cur[2] + cy; // pixel position in the second image calculated
 
         if (u < half_patch_size || u > img2.cols - half_patch_size || v < half_patch_size || v > img2.rows - half_patch_size)
@@ -300,7 +297,17 @@ void JacobianAccumulator::accumulate_jacobian(const cv::Range &range)
         for (int x = -half_patch_size; x <= half_patch_size; x++)
             for (int y = -half_patch_size; y <= half_patch_size; y++)
             {
-                double error = GetPixelValue(img1, px_ref[i][0] + x, px_ref[i][1] + y) - GetPixelValue(img2, u + x, v + y);
+                double error;
+                if ( (GetPixelValue(depth_img2, u + x, v + y) <= min_depth ) || ( GetPixelValue(depth_img2, u + x, v + y) >= max_depth) )
+                {
+                    error = GetPixelValue(img1, px_ref[i][0] + x, px_ref[i][1] + y) - GetPixelValue(img2, u + x, v + y);
+                }
+                else
+                {
+                    error = (GetPixelValue(img1, px_ref[i][0] + x, px_ref[i][1] + y) - GetPixelValue(img2, u + x, v + y)) + (depth_ref[i] - GetPixelValue(depth_img2, u + x, v + y));
+                }
+
+                // double error = GetPixelValue(img1, px_ref[i][0] + x, px_ref[i][1] + y) - GetPixelValue(img2, u + x, v + y);
 
                 Matrix26d J_pixel_xi;
                 Eigen::Vector2d J_img_pixel;
@@ -348,6 +355,7 @@ void DirectPoseEstimationMultiLayer(
     const cv::Mat &img2,
     const VecVector2d &px_ref,
     const vector<double> depth_ref,
+    const cv::Mat &depth_img2,
     Sophus::SE3d &T21)
 {
 
@@ -392,6 +400,6 @@ void DirectPoseEstimationMultiLayer(
         cx = cxG * scales[level];
         cy = cyG * scales[level];
         // cout << "into signal layer Direct method" << endl;
-        DirectPoseEstimationSingleLayer(pyr1[level], pyr2[level], px_ref_pyr, depth_ref, T21);
+        DirectPoseEstimationSingleLayer(pyr1[level], pyr2[level], px_ref_pyr, depth_ref, depth_img2, T21);
     }
 }
