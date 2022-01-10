@@ -2,12 +2,13 @@
 #include <sophus/se3.hpp>
 #include <boost/format.hpp>
 #include <pangolin/pangolin.h>
+#include <fstream>
 
 using namespace std;
 using namespace Eigen;
 
 typedef vector<Eigen::Vector2d, Eigen::aligned_allocator<Eigen::Vector2d>> VecVector2d;
-
+typedef vector<Sophus::SE3d, Eigen::aligned_allocator<Sophus::SE3d>> TrajectoryType;
 // Camera intrinsics
 //double fx = 718.856, fy = 718.856, cx = 607.1928, cy = 185.2157;
 double fx = 726.28741455078, fy = 726.28741455078, cx = 354.6496887207, cy = 186.46566772461;
@@ -30,7 +31,7 @@ public:
         const VecVector2d &px_ref_,
         const vector<double> depth_ref_,
         const cv::Mat &depth_img2_,
-        Sophus::SE3d &T21_) : img1(img1_), img2(img2_), px_ref(px_ref_), depth_ref(depth_ref_), depth_img2(depth_img2_), T21(T21_)
+        Sophus::SE3d &T21_) : px_ref(px_ref_), depth_ref(depth_ref_), depth_img2(depth_img2_), T21(T21_), img1(img1_), img2(img2_)
     {
         projection = VecVector2d(px_ref.size(), Eigen::Vector2d(0, 0));
     }
@@ -74,8 +75,10 @@ private:
 };
 
 void DirectPoseEstimationMultiLayer(
-    const cv::Mat &img1,
-    const cv::Mat &img2,
+    // const cv::Mat &img1,
+    // const cv::Mat &img2,
+    cv::Mat img1,
+    cv::Mat img2,
     const VecVector2d &px_ref,
     const vector<double> depth_ref,
     const cv::Mat &depth_img2,
@@ -91,6 +94,9 @@ void DirectPoseEstimationSingleLayer(
 
 void showPointCloud(
     const vector<Vector4d, Eigen::aligned_allocator<Vector4d>> &pointcloud);
+
+void showPointCloud(
+    const vector<Vector6d, Eigen::aligned_allocator<Vector6d>> &pointcloud);
 
 // 得到3D点后，在像素坐标中定位后，获取该像素的值
 float GetPixelValue(const cv::Mat &img, float x, float y)
@@ -119,12 +125,27 @@ int main()
 {
     boost::format fmt("./%s/%06d.png"); //图像文件格式
 
-    vector<cv::Mat> color_images, depth_images;
+    TrajectoryType ground_truth_poses;
 
-    for (int img_number = 1; img_number < 3; img_number++)
+    ifstream fin("./pose.txt");
+    if (!fin)
     {
-        color_images.push_back(cv::imread((fmt % "color" % img_number).str(), cv::IMREAD_GRAYSCALE));
-        depth_images.push_back(cv::imread((fmt % "depth" % img_number).str(), cv::IMREAD_ANYDEPTH));
+        cerr << "请在有pose.txt的目录下运行此程序" << endl;
+        return 1;
+    }
+    vector<cv::Mat> color_images, depth_images;
+    for (int i = 0; i < 5; i++)
+    {
+        boost::format fmt("./%s/%d.%s");
+        color_images.push_back(cv::imread((fmt % "color" % (i + 1) % "png").str(), cv::IMREAD_COLOR));
+        depth_images.push_back(cv::imread((fmt % "depth" % (i + 1) % "png").str(), cv::IMREAD_ANYDEPTH));
+
+        double data[7] = {0};
+        for (auto &d : data)
+            fin >> d;
+        Sophus::SE3d pose(Eigen::Quaterniond(data[6], data[3], data[4], data[5]),
+                          Eigen::Vector3d(data[0], data[1], data[2]));
+        ground_truth_poses.push_back(pose);
     }
 
     // generate pixels in ref and load depth data
@@ -154,7 +175,8 @@ int main()
     std::cout << "points generated" << endl;
 
     // estimates 01~05.png's pose using this information
-    vector<Sophus::SE3d> poses;
+    //vector<Sophus::SE3d> poses;
+    TrajectoryType poses;
     Sophus::SE3d T_cur_ref;
     Sophus::SE3d T_0;
     poses.push_back(T_0);
@@ -193,11 +215,10 @@ int main()
     // DirectPoseEstimationSingleLayer(color_images[1], color_images[2], pixels_ref, depth_ref, T_cur_ref);
     DirectPoseEstimationMultiLayer(color_images[0], color_images[1], pixels_ref, depth_ref, depth_images[1], T_cur_ref);
 
+    //poses.push_back(T_cur_ref);
     poses.push_back(T_cur_ref);
-
-    vector<Vector4d, Eigen::aligned_allocator<Vector4d>> pointcloud;
-
-    double depthScale = 1.0;
+    double depthScale = 1000.0;
+    vector<Vector6d, Eigen::aligned_allocator<Vector6d>> pointcloud;
     pointcloud.reserve(1000000);
 
     for (int i = 0; i < 2; i++)
@@ -206,29 +227,33 @@ int main()
         cv::Mat color = color_images[i];
         cv::Mat depth = depth_images[i];
         Sophus::SE3d T = poses[i];
+        cout << "T" << i << ": " << endl
+             << T.matrix() << endl;
         for (int v = 0; v < color.rows; v++)
             for (int u = 0; u < color.cols; u++)
             {
-                //double d = depth.ptr<double>(v)[u]; // 深度值
-                double d = depth_images[1].at<uchar>(v, u);
-                if (d < min_depth || d > max_depth)
+                unsigned int d = depth.ptr<unsigned short>(v)[u]; // 深度值
+                if (d == 0)
                     continue; // 为0表示没有测量到
                 Eigen::Vector3d point;
-                point[2] = d / depthScale;
+                point[2] = double(d) / depthScale;
                 point[0] = (u - cx) * point[2] / fx;
                 point[1] = (v - cy) * point[2] / fy;
                 Eigen::Vector3d pointWorld = T * point;
                 //cout<<"point "<<u+v<<": "<<endl<<pointWorld<< endl;
 
-
-                Vector4d p;
+                Vector6d p;
                 p.head<3>() = pointWorld;
-                p[3] = color.data[v * color.step + u];
+                p[5] = color.data[v * color.step + u * color.channels()];     // blue
+                p[4] = color.data[v * color.step + u * color.channels() + 1]; // green
+                p[3] = color.data[v * color.step + u * color.channels() + 2]; // red
                 pointcloud.push_back(p);
+                //cout<<p<<endl<<endl;
             }
     }
 
     cout << "点云共有" << pointcloud.size() << "个点." << endl;
+
     showPointCloud(pointcloud);
 }
 
@@ -398,14 +423,17 @@ void JacobianAccumulator::accumulate_jacobian(const cv::Range &range)
 }
 
 void DirectPoseEstimationMultiLayer(
-    const cv::Mat &img1,
-    const cv::Mat &img2,
+    // const cv::Mat &img1,
+    // const cv::Mat &img2,
+    cv::Mat img1,
+    cv::Mat img2,
     const VecVector2d &px_ref,
     const vector<double> depth_ref,
     const cv::Mat &depth_img2,
     Sophus::SE3d &T21)
 {
-
+    cv::cvtColor(img1, img1, cv::COLOR_BGR2GRAY);
+    cv::cvtColor(img2, img2, cv::COLOR_BGR2GRAY);
     // parameters
     int pyramids = 4;
     double pyramid_scale = 0.5;
@@ -451,6 +479,49 @@ void DirectPoseEstimationMultiLayer(
     }
 }
 
+void showPointCloud(const vector<Vector6d, Eigen::aligned_allocator<Vector6d>> &pointcloud)
+{
+
+    if (pointcloud.empty())
+    {
+        cerr << "Point cloud is empty!" << endl;
+        return;
+    }
+
+    pangolin::CreateWindowAndBind("Point Cloud Viewer", 1024, 768);
+    glEnable(GL_DEPTH_TEST);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    pangolin::OpenGlRenderState s_cam(
+        pangolin::ProjectionMatrix(1024, 768, 500, 500, 512, 389, 0.1, 1000),
+        pangolin::ModelViewLookAt(0, -0.1, -1.8, 0, 0, 0, 0.0, -1.0, 0.0));
+
+    pangolin::View &d_cam = pangolin::CreateDisplay()
+                                .SetBounds(0.0, 1.0, pangolin::Attach::Pix(175), 1.0, -1024.0f / 768.0f)
+                                .SetHandler(new pangolin::Handler3D(s_cam));
+
+    while (pangolin::ShouldQuit() == false)
+    {
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        d_cam.Activate(s_cam);
+        glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+
+        glPointSize(2);
+        glBegin(GL_POINTS);
+        for (auto &p : pointcloud)
+        {
+            glColor3d(p[3] / 255.0, p[4] / 255.0, p[5] / 255.0);
+            glVertex3d(p[0], p[1], p[2]);
+        }
+        glEnd();
+        pangolin::FinishFrame();
+        usleep(5000); // sleep 5 ms
+    }
+    return;
+}
+
 void showPointCloud(const vector<Vector4d, Eigen::aligned_allocator<Vector4d>> &pointcloud)
 {
 
@@ -460,28 +531,28 @@ void showPointCloud(const vector<Vector4d, Eigen::aligned_allocator<Vector4d>> &
         return;
     }
 
-    pangolin::CreateWindowAndBind("Point Cloud Viewer", 1024,768);
-    glEnable(GL_DEPTH_TEST);    //启用深度缓存。
-    glEnable(GL_BLEND);         //启用gl_blend混合。Blend混合是将源色和目标色以某种方式混合生成特效的技术。
+    pangolin::CreateWindowAndBind("Point Cloud Viewer", 1024, 768);
+    glEnable(GL_DEPTH_TEST); //启用深度缓存。
+    glEnable(GL_BLEND);      //启用gl_blend混合。Blend混合是将源色和目标色以某种方式混合生成特效的技术。
     //混合常用来绘制透明或半透明的物体。在混合中起关键作用的α值实际上是将源色和目标色按给定比率进行混合，以达到不同程度的透明。
     //α值为0则完全透明，α值为1则完全不透明。混合操作只能在RGBA模式下进行，颜色索引模式下无法指定α值。
     //物体的绘制顺序会影响到OpenGL的混合处理。
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);  //混合函数。参数1是源混合因子，参数2时目标混合因子。本命令选择了最常使用的参数。
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); //混合函数。参数1是源混合因子，参数2时目标混合因子。本命令选择了最常使用的参数。
 
     //定义投影和初始模型视图矩阵
     pangolin::OpenGlRenderState s_cam(
         pangolin::ProjectionMatrix(1024, 768, 500, 500, 512, 389, 0.1, 1000),
         //对应为gluLookAt,摄像机位置,参考点位置,up vector(上向量)
-        pangolin::ModelViewLookAt(0, -0.1, -1.8, 0, 0, 0, 0.0, -1.0, 0.0)
-    );
+        pangolin::ModelViewLookAt(0, -0.1, -1.8, 0, 0, 0, 0.0, -1.0, 0.0));
     //管理OpenGl视口的位置和大小
     pangolin::View &d_cam = pangolin::CreateDisplay()
-        //使用混合分数/像素坐标（OpenGl视图坐标）设置视图的边界
-        .SetBounds(0.0, 1.0, pangolin::Attach::Pix(175), 1.0, -1024.0f / 768.0f)
-        //指定用于接受键盘或鼠标输入的处理程序
-        .SetHandler(new pangolin::Handler3D(s_cam));
+                                //使用混合分数/像素坐标（OpenGl视图坐标）设置视图的边界
+                                .SetBounds(0.0, 1.0, pangolin::Attach::Pix(175), 1.0, -1024.0f / 768.0f)
+                                //指定用于接受键盘或鼠标输入的处理程序
+                                .SetHandler(new pangolin::Handler3D(s_cam));
 
-    while (pangolin::ShouldQuit() == false) {
+    while (pangolin::ShouldQuit() == false)
+    {
         //清除屏幕
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         //激活要渲染到视图
@@ -493,13 +564,14 @@ void showPointCloud(const vector<Vector4d, Eigen::aligned_allocator<Vector4d>> &
         glPointSize(2);
         //glBegin()要和glEnd()组合使用。其参数表示创建图元的类型，GL_POINTS表示把每个顶点作为一个点进行处理
         glBegin(GL_POINTS);
-        for (auto &p: pointcloud) {
+        for (auto &p : pointcloud)
+        {
             glColor3f(p[3], p[3], p[3]);  //在OpenGl中设置颜色
             glVertex3d(p[0], p[1], p[2]); //设置顶点坐标
         }
         glEnd();
-        pangolin::FinishFrame();    //结束
-        usleep(5000);   // sleep 5 ms
+        pangolin::FinishFrame(); //结束
+        usleep(5000);            // sleep 5 ms
     }
     return;
 }
