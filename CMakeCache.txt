@@ -227,12 +227,6 @@ RGBDDirectMethod_SOURCE_DIR:STATIC=/home/qin/Downloads/RGBDDirectMethod
 //The directory containing a CMake configuration file for Sophus.
 Sophus_DIR:PATH=/usr/local/share/sophus/cmake
 
-//Value Computed by CMake
-ch8_BINARY_DIR:STATIC=/home/qin/Downloads/RGBDDirectMethod
-
-//Value Computed by CMake
-ch8_SOURCE_DIR:STATIC=/home/qin/Downloads/RGBDDirectMethod
-
 
 ########################
 # INTERNAL cache entries
