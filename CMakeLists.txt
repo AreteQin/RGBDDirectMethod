@@ -7,7 +7,7 @@ set(CMAKE_CXX_FLAGS "-std=c++17 ${SSE_FLAGS} -g -O3 -march=native")
 
 find_package(OpenCV 4 REQUIRED)
 find_package(Sophus REQUIRED)
-find_package(Pangolin REQUIRED)
+find_package(Pangolin REQUIRED) # used to show pointcloud
 
 include_directories(
         ${OpenCV_INCLUDE_DIRS}
