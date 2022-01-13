@@ -17,6 +17,18 @@ pangolin/pangolin.h
 -
 fstream
 -
+g2o/core/base_vertex.h
+-
+g2o/core/base_unary_edge.h
+-
+g2o/core/block_solver.h
+-
+g2o/core/optimization_algorithm_gauss_newton.h
+-
+g2o/core/optimization_algorithm_levenberg.h
+-
+g2o/solvers/dense/linear_solver_dense.h
+-
 
 /home/qin/Pangolin/components/pango_core/include/pangolin/compat/type_traits.h
 pangolin/platform.h

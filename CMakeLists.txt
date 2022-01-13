@@ -3,7 +3,7 @@ project(RGBDDirectMethod)
 
 set(CMAKE_BUILD_TYPE "Release")
 add_definitions("-DENABLE_SSE")
-set(CMAKE_CXX_FLAGS "-std=c++17 ${SSE_FLAGS} -g -O3 -march=native")
+set(CMAKE_CXX_FLAGS "-std=c++14 ${SSE_FLAGS} -g -O3 -march=native")
 
 find_package(OpenCV 4 REQUIRED)
 find_package(Sophus REQUIRED)
