@@ -3,88 +3,7 @@
 
 CMakeFiles/direct_method.dir/direct_method.cpp.o
  /home/qin/Downloads/RGBDDirectMethod/direct_method.cpp
- /home/qin/Pangolin/components/pango_core/include/pangolin/compat/type_traits.h
- /home/qin/Pangolin/components/pango_core/include/pangolin/pangolin.h
- /home/qin/Pangolin/components/pango_core/include/pangolin/platform.h
- /home/qin/Pangolin/components/pango_core/include/pangolin/utils/assert.h
- /home/qin/Pangolin/components/pango_core/include/pangolin/utils/bitmask.h
- /home/qin/Pangolin/components/pango_core/include/pangolin/utils/file_extension.h
- /home/qin/Pangolin/components/pango_core/include/pangolin/utils/file_utils.h
- /home/qin/Pangolin/components/pango_core/include/pangolin/utils/format_string.h
- /home/qin/Pangolin/components/pango_core/include/pangolin/utils/is_streamable.h
- /home/qin/Pangolin/components/pango_core/include/pangolin/utils/log.h
- /home/qin/Pangolin/components/pango_core/include/pangolin/utils/params.h
- /home/qin/Pangolin/components/pango_core/include/pangolin/utils/picojson.h
- /home/qin/Pangolin/components/pango_core/include/pangolin/utils/range.h
- /home/qin/Pangolin/components/pango_core/include/pangolin/utils/signal_slot.h
- /home/qin/Pangolin/components/pango_core/include/pangolin/utils/simple_math.h
- /home/qin/Pangolin/components/pango_core/include/pangolin/utils/true_false_toggle.h
- /home/qin/Pangolin/components/pango_core/include/pangolin/utils/type_convert.h
- /home/qin/Pangolin/components/pango_core/include/pangolin/utils/uri.h
- /home/qin/Pangolin/components/pango_core/include/sigslot/signal.hpp
- /home/qin/Pangolin/components/pango_display/include/pangolin/display/attach.h
- /home/qin/Pangolin/components/pango_display/include/pangolin/display/display.h
- /home/qin/Pangolin/components/pango_display/include/pangolin/display/display.hpp
- /home/qin/Pangolin/components/pango_display/include/pangolin/display/view.h
- /home/qin/Pangolin/components/pango_display/include/pangolin/display/widgets.h
- /home/qin/Pangolin/components/pango_display/include/pangolin/handler/handler.h
- /home/qin/Pangolin/components/pango_image/include/pangolin/image/copy.h
- /home/qin/Pangolin/components/pango_image/include/pangolin/image/image.h
- /home/qin/Pangolin/components/pango_image/include/pangolin/image/image_io.h
- /home/qin/Pangolin/components/pango_image/include/pangolin/image/managed_image.h
- /home/qin/Pangolin/components/pango_image/include/pangolin/image/memcpy.h
- /home/qin/Pangolin/components/pango_image/include/pangolin/image/pixel_format.h
- /home/qin/Pangolin/components/pango_image/include/pangolin/image/typed_image.h
- /home/qin/Pangolin/components/pango_opengl/include/pangolin/gl/colour.h
- /home/qin/Pangolin/components/pango_opengl/include/pangolin/gl/compat/gl2engine.h
- /home/qin/Pangolin/components/pango_opengl/include/pangolin/gl/compat/gl_es_compat.h
- /home/qin/Pangolin/components/pango_opengl/include/pangolin/gl/gl.h
- /home/qin/Pangolin/components/pango_opengl/include/pangolin/gl/gl.hpp
- /home/qin/Pangolin/components/pango_opengl/include/pangolin/gl/glchar.h
- /home/qin/Pangolin/components/pango_opengl/include/pangolin/gl/gldraw.h
- /home/qin/Pangolin/components/pango_opengl/include/pangolin/gl/glfont.h
- /home/qin/Pangolin/components/pango_opengl/include/pangolin/gl/glformattraits.h
- /home/qin/Pangolin/components/pango_opengl/include/pangolin/gl/glinclude.h
- /home/qin/Pangolin/components/pango_opengl/include/pangolin/gl/glpangoglu.h
- /home/qin/Pangolin/components/pango_opengl/include/pangolin/gl/glpixformat.h
- /home/qin/Pangolin/components/pango_opengl/include/pangolin/gl/glplatform.h
- /home/qin/Pangolin/components/pango_opengl/include/pangolin/gl/glsl.h
- /home/qin/Pangolin/components/pango_opengl/include/pangolin/gl/glstate.h
- /home/qin/Pangolin/components/pango_opengl/include/pangolin/gl/gltext.h
- /home/qin/Pangolin/components/pango_opengl/include/pangolin/gl/glvbo.h
- /home/qin/Pangolin/components/pango_opengl/include/pangolin/gl/opengl_render_state.h
- /home/qin/Pangolin/components/pango_opengl/include/pangolin/gl/viewport.h
- /home/qin/Pangolin/components/pango_plot/include/pangolin/plot/datalog.h
- /home/qin/Pangolin/components/pango_plot/include/pangolin/plot/plotter.h
- /home/qin/Pangolin/components/pango_vars/include/pangolin/var/var.h
- /home/qin/Pangolin/components/pango_vars/include/pangolin/var/varextra.h
- /home/qin/Pangolin/components/pango_vars/include/pangolin/var/varinit.h
- /home/qin/Pangolin/components/pango_vars/include/pangolin/var/varstate.h
- /home/qin/Pangolin/components/pango_vars/include/pangolin/var/varvalue.h
- /home/qin/Pangolin/components/pango_vars/include/pangolin/var/varvaluegeneric.h
- /home/qin/Pangolin/components/pango_vars/include/pangolin/var/varvaluet.h
- /home/qin/Pangolin/components/pango_vars/include/pangolin/var/varwrapper.h
- /home/qin/Pangolin/components/pango_video/include/pangolin/video/stream_info.h
- /home/qin/Pangolin/components/pango_video/include/pangolin/video/video.h
- /home/qin/Pangolin/components/pango_video/include/pangolin/video/video_exception.h
- /home/qin/Pangolin/components/pango_video/include/pangolin/video/video_input.h
- /home/qin/Pangolin/components/pango_video/include/pangolin/video/video_interface.h
- /home/qin/Pangolin/components/pango_video/include/pangolin/video/video_output.h
- /home/qin/Pangolin/components/pango_video/include/pangolin/video/video_output_interface.h
- /home/qin/Pangolin/components/pango_windowing/include/pangolin/windowing/handler_bitsets.h
- /home/qin/Pangolin/components/pango_windowing/include/pangolin/windowing/handler_enums.h
- /home/qin/Pangolin/components/pango_windowing/include/pangolin/windowing/window.h
- /usr/include/eigen3/Eigen/Cholesky
  /usr/include/eigen3/Eigen/Core
- /usr/include/eigen3/Eigen/Geometry
- /usr/include/eigen3/Eigen/Householder
- /usr/include/eigen3/Eigen/Jacobi
- /usr/include/eigen3/Eigen/LU
- /usr/include/eigen3/Eigen/QR
- /usr/include/eigen3/Eigen/SVD
- /usr/include/eigen3/Eigen/src/Cholesky/LDLT.h
- /usr/include/eigen3/Eigen/src/Cholesky/LLT.h
- /usr/include/eigen3/Eigen/src/Cholesky/LLT_LAPACKE.h
  /usr/include/eigen3/Eigen/src/Core/Array.h
  /usr/include/eigen3/Eigen/src/Core/ArrayBase.h
  /usr/include/eigen3/Eigen/src/Core/ArrayWrapper.h
@@ -216,48 +135,7 @@ CMakeFiles/direct_method.dir/direct_method.cpp.o
  /usr/include/eigen3/Eigen/src/Core/util/ReenableStupidWarnings.h
  /usr/include/eigen3/Eigen/src/Core/util/StaticAssert.h
  /usr/include/eigen3/Eigen/src/Core/util/XprHelper.h
- /usr/include/eigen3/Eigen/src/Geometry/AlignedBox.h
- /usr/include/eigen3/Eigen/src/Geometry/AngleAxis.h
- /usr/include/eigen3/Eigen/src/Geometry/EulerAngles.h
- /usr/include/eigen3/Eigen/src/Geometry/Homogeneous.h
- /usr/include/eigen3/Eigen/src/Geometry/Hyperplane.h
- /usr/include/eigen3/Eigen/src/Geometry/OrthoMethods.h
- /usr/include/eigen3/Eigen/src/Geometry/ParametrizedLine.h
- /usr/include/eigen3/Eigen/src/Geometry/Quaternion.h
- /usr/include/eigen3/Eigen/src/Geometry/Rotation2D.h
- /usr/include/eigen3/Eigen/src/Geometry/RotationBase.h
- /usr/include/eigen3/Eigen/src/Geometry/Scaling.h
- /usr/include/eigen3/Eigen/src/Geometry/Transform.h
- /usr/include/eigen3/Eigen/src/Geometry/Translation.h
- /usr/include/eigen3/Eigen/src/Geometry/Umeyama.h
- /usr/include/eigen3/Eigen/src/Geometry/arch/Geometry_SSE.h
- /usr/include/eigen3/Eigen/src/Householder/BlockHouseholder.h
- /usr/include/eigen3/Eigen/src/Householder/Householder.h
- /usr/include/eigen3/Eigen/src/Householder/HouseholderSequence.h
- /usr/include/eigen3/Eigen/src/Jacobi/Jacobi.h
- /usr/include/eigen3/Eigen/src/LU/Determinant.h
- /usr/include/eigen3/Eigen/src/LU/FullPivLU.h
- /usr/include/eigen3/Eigen/src/LU/InverseImpl.h
- /usr/include/eigen3/Eigen/src/LU/PartialPivLU.h
- /usr/include/eigen3/Eigen/src/LU/PartialPivLU_LAPACKE.h
- /usr/include/eigen3/Eigen/src/LU/arch/Inverse_SSE.h
- /usr/include/eigen3/Eigen/src/QR/ColPivHouseholderQR.h
- /usr/include/eigen3/Eigen/src/QR/ColPivHouseholderQR_LAPACKE.h
- /usr/include/eigen3/Eigen/src/QR/CompleteOrthogonalDecomposition.h
- /usr/include/eigen3/Eigen/src/QR/FullPivHouseholderQR.h
- /usr/include/eigen3/Eigen/src/QR/HouseholderQR.h
- /usr/include/eigen3/Eigen/src/QR/HouseholderQR_LAPACKE.h
- /usr/include/eigen3/Eigen/src/SVD/BDCSVD.h
- /usr/include/eigen3/Eigen/src/SVD/JacobiSVD.h
- /usr/include/eigen3/Eigen/src/SVD/JacobiSVD_LAPACKE.h
- /usr/include/eigen3/Eigen/src/SVD/SVDBase.h
- /usr/include/eigen3/Eigen/src/SVD/UpperBidiagonalization.h
- /usr/include/eigen3/Eigen/src/misc/Image.h
- /usr/include/eigen3/Eigen/src/misc/Kernel.h
- /usr/include/eigen3/Eigen/src/misc/RealSvd2x2.h
  /usr/include/eigen3/Eigen/src/misc/blas.h
- /usr/include/eigen3/Eigen/src/misc/lapacke.h
- /usr/include/eigen3/Eigen/src/misc/lapacke_mangling.h
  /usr/include/eigen3/Eigen/src/plugins/ArrayCwiseBinaryOps.h
  /usr/include/eigen3/Eigen/src/plugins/ArrayCwiseUnaryOps.h
  /usr/include/eigen3/Eigen/src/plugins/BlockMethods.h

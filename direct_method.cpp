@@ -3,11 +3,16 @@
 #include <boost/format.hpp>
 #include <pangolin/pangolin.h>
 #include <fstream>
-#include <g2o/core/base_vertex.h>
+#include <g2o/core/base_binary_edge.h>
 #include <g2o/core/base_unary_edge.h>
+#include <g2o/core/base_vertex.h>
 #include <g2o/core/block_solver.h>
 #include <g2o/core/optimization_algorithm_gauss_newton.h>
 #include <g2o/core/optimization_algorithm_levenberg.h>
+#include <g2o/core/robust_kernel_impl.h>
+#include <g2o/core/solver.h>
+#include <g2o/core/sparse_optimizer.h>
+#include <g2o/solvers/csparse/linear_solver_csparse.h>
 #include <g2o/solvers/dense/linear_solver_dense.h>
 
 using namespace std;
@@ -15,9 +20,46 @@ using namespace Eigen;
 
 typedef vector<Eigen::Vector2d, Eigen::aligned_allocator<Eigen::Vector2d>> VecVector2d;
 typedef vector<Sophus::SE3d, Eigen::aligned_allocator<Sophus::SE3d>> TrajectoryType;
+typedef Eigen::Matrix<double, 2, 1> Vec2;
+
+// G2O
+/// vertex used in g2o ba
+class VertexPose : public g2o::BaseVertex<6, Sophus::SE3d>
+{
+public:
+    virtual void setToOriginImpl() override
+    {
+        _estimate = Sophus::SE3d();
+    }
+    /// left multiplication on SE3
+    virtual void oplusImpl(const double *update) override
+    {
+        Eigen::Matrix<double, 6, 1> update_eigen;
+        update_eigen << update[0], update[1], update[2], update[3], update[4], update[5];
+        _estimate = Sophus::SE3d::exp(update_eigen) * _estimate;
+    }
+    virtual bool read(istream &in) override {}
+    virtual bool write(ostream &out) const override {}
+};
+/// 定义仅优化位姿的一元边，2表示观测值的维度，Vec2表示观测值的数据类型是一个2×1的向量，VertexPose表示定点的数据类型
+class EdgeProjectionPoseOnly : public g2o::BaseUnaryEdge<2, Vec2, VertexPose>
+{
+public:
+    EdgeProjectionPoseOnly(const cv::Mat &img1_,
+                           const cv::Mat &img2_,
+                           const VecVector2d &px_ref_,
+                           const vector<double> depth_ref_,
+                           const cv::Mat &depth_img2_, ) : px_ref(px_ref_), depth_ref(depth_ref_), depth_img2(depth_img2_), img1(img1_), img2(img2_)
+    virtual void computeError() override {
+        const VertexPose *V static_cast<VertexPose *> (_vertices[0]); // _vertices[0]表示这条边所链接的地一个顶点，由于是一元边，因此只有_vertices[1]，若是二元边则还会存在_vertices[1]
+        
+    }
+}
+
 // Camera intrinsics
 //double fx = 718.856, fy = 718.856, cx = 607.1928, cy = 185.2157;
-double fx = 726.28741455078, fy = 726.28741455078, cx = 354.6496887207, cy = 186.46566772461;
+double fx = 726.28741455078,
+       fy = 726.28741455078, cx = 354.6496887207, cy = 186.46566772461;
 
 double min_depth = 1.0;
 double max_depth = 255.0;
@@ -280,6 +322,26 @@ void DirectPoseEstimationSingleLayer(
     g2o::SparseOptimizer optimizer; // 图模型
     optimizer.setAlgorithm(solver); // 设置求解器
     optimizer.setVerbose(true);     // 打开调试输出
+
+    VertexPose *vertex_pose = new VertexPose(); // camera vertex_pose
+    vertex_pose->setId(0);
+    vertex_pose->setEstimate(T21);
+    optimizer.addVertex(vertex_pose);
+
+    // edges counter
+    int index = 1;
+
+    //新增部分：第一个相机作为顶点连接的边
+    for (size_t i = 0; i < px_ref.size(); ++i)
+    {
+        EdgeProjection *edge = new EdgeProjection(px_ref[i], depth_ref[i], img1, img2);
+        edge->setId(index);
+        edge->setVertex(0, vertex_pose);
+        edge->setMeasurement(GetPixelValue(img1, px_ref[i][0], px_ref[i][1]));
+        edge->setInformation(Eigen::Matrix<double, 1, 1>::Identity());
+        optimizer.addEdge(edge);
+        index++;
+    }
 
     const int iterations = 10;
     double cost = 0, lastCost = 0;
