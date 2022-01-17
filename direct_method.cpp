@@ -47,12 +47,13 @@ class EdgeProjectionPoseOnly : public g2o::BaseUnaryEdge<2, Vec2, VertexPose>
 public:
     EdgeProjectionPoseOnly(const cv::Mat &img1_,
                            const cv::Mat &img2_,
-                           const VecVector2d &px_ref_,
-                           const vector<double> depth_ref_,
-                           const cv::Mat &depth_img2_, ) : px_ref(px_ref_), depth_ref(depth_ref_), depth_img2(depth_img2_), img1(img1_), img2(img2_)
+                           const Eigen::Vector2d &px_ref_,
+                           const double &depth_ref_,
+                           const double &depth_ref2_) : px_ref(px_ref_), depth_ref(depth_ref_), depth_ref2(depth_ref2_), img1(img1_), img2(img2_)
     virtual void computeError() override {
-        const VertexPose *V static_cast<VertexPose *> (_vertices[0]); // _vertices[0]表示这条边所链接的地一个顶点，由于是一元边，因此只有_vertices[1]，若是二元边则还会存在_vertices[1]
-        
+        const VertexPose *v static_cast<VertexPose *> (_vertices[0]); // _vertices[0]表示这条边所链接的地一个顶点，由于是一元边，因此只有_vertices[1]，若是二元边则还会存在_vertices[1]
+        Sophus::SE3d T = v->estimate();
+        Eigen::Vector3d 3d_poisition = depth_ref * Eigen::Vector3d((px_ref[0]-cx)/fx, (px_ref[1]-cy)/fy, 1);
     }
 }
 
@@ -429,7 +430,8 @@ void JacobianAccumulator::accumulate_jacobian(const cv::Range &range)
         Eigen::Vector3d point_cur = T21 * point_ref;
         if (point_cur[2] < 0) // depth invalid
             continue;
-        float u = fx * point_cur[0] / point_cur[2] + cx, v = fy * point_cur[1] / point_cur[2] + cy; // pixel position in the second image calculated
+        float u = fx * point_cur[0] / point_cur[2] + cx;
+        float v = fy * point_cur[1] / point_cur[2] + cy; // pixel position in the second image calculated
 
         if (u < half_patch_size || u > img2.cols - half_patch_size || v < half_patch_size || v > img2.rows - half_patch_size)
             continue; // skip the points out of sight
