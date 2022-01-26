@@ -36,7 +36,7 @@ typedef Eigen::Matrix<double, 6, 6> Matrix6d;
 typedef Eigen::Matrix<double, 2, 6> Matrix26d;
 typedef Eigen::Matrix<double, 6, 1> Vector6d;
 
-// 得到3D点后，在像素坐标中定位后，获取该像素的值
+// 得到3D点在图像中像素坐标后，获取该像素的灰度或深度
 float GetPixelValue(const cv::Mat &img, float x, float y)
 {
     // boundary check
