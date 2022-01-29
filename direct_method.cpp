@@ -95,8 +95,8 @@ public:
         Eigen::Vector3d position_in_cur_cam = T * position_in_ref_cam;
         double u_in_cur_pixel = fx * position_in_cur_cam[0] / position_in_cur_cam[2] + cx;
         double v_in_cur_pixel = fy * position_in_cur_cam[1] / position_in_cur_cam[2] + cy;
-        _error(0, 0) = _measurement(0, 0) - GetPixelValue(img2, u_in_cur_pixel, v_in_cur_pixel);
-        _error(0, 1) = _measurement(0, 1) - GetPixelValue(depth_img2, u_in_cur_pixel, v_in_cur_pixel);
+        _error(0, 0) = GetPixelValue(img2, u_in_cur_pixel, v_in_cur_pixel) - _measurement(0, 0);
+        _error(0, 1) = GetPixelValue(depth_img2, u_in_cur_pixel, v_in_cur_pixel) - _measurement(0, 1);
         //cout<<"_measurement(0, 0)= "<<_measurement(0, 0)<<endl<<"_measurement(0, 1)= "<<_measurement(0, 1)<<endl;
     }
     virtual void linearizeOplus() override // 重写线性化函数，即得到泰勒展开e(x+delta_x)=e(x)+J^T*delta_x中的J，推导过程见14讲7.3.3
@@ -108,7 +108,7 @@ public:
         double u_in_cur_pixel = fx * position_in_cur_cam[0] / position_in_cur_cam[2] + cx;
         double v_in_cur_pixel = fy * position_in_cur_cam[1] / position_in_cur_cam[2] + cy;
 
-        Eigen::Matrix<double, 6, 1> J_1, J_2;
+        Eigen::Matrix<double, 1, 6> J_1, J_2, J_position_xi_Z;
         double X = position_in_cur_cam[0], Y = position_in_cur_cam[1], Z = position_in_cur_cam[2];
         double Z2 = Z * Z, Z_inv = 1.0 / Z, Z2_inv = Z_inv * Z_inv;
         Matrix26d J_position_xi;
@@ -128,6 +128,13 @@ public:
         J_position_xi(1, 4) = fy * X * Y * Z2_inv;
         J_position_xi(1, 5) = fy * X * Z_inv;
 
+        J_position_xi_Z(0, 0) = 0;
+        J_position_xi_Z(0, 1) = 0;
+        J_position_xi_Z(0, 2) = 1;
+        J_position_xi_Z(0, 3) = -Y;
+        J_position_xi_Z(0, 4) = X;
+        J_position_xi_Z(0, 5) = 0;
+
         J_color_gradient = Eigen::Vector2d(
             0.5 * (GetPixelValue(img2, u_in_cur_pixel + 1, v_in_cur_pixel) - GetPixelValue(img2, u_in_cur_pixel - 1, v_in_cur_pixel)),
             0.5 * (GetPixelValue(img2, u_in_cur_pixel, v_in_cur_pixel + 1) - GetPixelValue(img2, u_in_cur_pixel, v_in_cur_pixel - 1)));
@@ -136,8 +143,8 @@ public:
             0.5 * (GetPixelValue(depth_img2, u_in_cur_pixel + 1, v_in_cur_pixel) - GetPixelValue(depth_img2, u_in_cur_pixel - 1, v_in_cur_pixel)),
             0.5 * (GetPixelValue(depth_img2, u_in_cur_pixel, v_in_cur_pixel + 1) - GetPixelValue(depth_img2, u_in_cur_pixel, v_in_cur_pixel - 1)));
 
-        J_1 = -1.0 * (J_color_gradient.transpose() * J_position_xi).transpose();
-        J_2 = -1.0 * (J_depth_gradient.transpose() * J_position_xi).transpose();
+        J_1 = (J_color_gradient.transpose() * J_position_xi);
+        J_2 = (J_depth_gradient.transpose() * J_position_xi) - J_position_xi_Z;
 
         // total jacobian
         _jacobianOplusXi << J_1[0], J_1[1], J_1[2], J_1[3], J_1[4], J_1[5],
