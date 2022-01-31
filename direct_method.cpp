@@ -37,7 +37,7 @@ typedef Eigen::Matrix<double, 2, 6> Matrix26d;
 typedef Eigen::Matrix<double, 6, 1> Vector6d;
 
 // 得到3D点在图像中像素坐标后，获取该像素的灰度或深度
-float GetPixelValue(const cv::Mat &img, float x, float y)
+double GetPixelValue(const cv::Mat &img, double x, double y)
 {
     // boundary check
     if (x < 0)
@@ -49,10 +49,10 @@ float GetPixelValue(const cv::Mat &img, float x, float y)
     if (y >= img.rows)
         y = img.rows - 1;
     uchar *data = &img.data[int(y) * img.step + int(x)]; // 定位到做对比的像素位置
-    float xx = x - floor(x);
-    float yy = y - floor(y);
+    double xx = x - floor(x);
+    double yy = y - floor(y);
     // 使用bilinear interpolation计算该位置的近似灰度
-    return float(
+    return double(
         (1 - xx) * (1 - yy) * data[0] +
         xx * (1 - yy) * data[1] +
         (1 - xx) * yy * data[img.step] +
@@ -89,12 +89,15 @@ public:
                            const cv::Mat &depth_img2_) : img1(img1_), img2(img2_), px_ref(px_ref_), depth_ref(depth_ref_), depth_img2(depth_img2_) {}
     virtual void computeError() override
     {
-        const VertexPose *v = static_cast<VertexPose *>(_vertices[0]); // _vertices[0]表示这条边所链接的地一个顶点，由于是一元边，因此只有_vertices[1]，若是二元边则还会存在_vertices[1]
+        const VertexPose *v = static_cast<VertexPose *>(_vertices[0]); // _vertices[0]表示这条边所链接的地一个顶点，由于是一元边，因此只有_vertices[0]，若是二元边则还会存在_vertices[1]
         Sophus::SE3d T = v->estimate();
         Eigen::Vector3d position_in_ref_cam = depth_ref * Eigen::Vector3d((px_ref[0] - cx) / fx, (px_ref[1] - cy) / fy, 1); // 深度乘以归一化坐标就得到了相机坐标系下的三维点
         Eigen::Vector3d position_in_cur_cam = T * position_in_ref_cam;
         double u_in_cur_pixel = fx * position_in_cur_cam[0] / position_in_cur_cam[2] + cx;
         double v_in_cur_pixel = fy * position_in_cur_cam[1] / position_in_cur_cam[2] + cy;
+        // std::cout << "T: "<<T.matrix() << std::endl;
+        // std::cout << "point_position_ref: "<<position_in_ref_cam<<std::endl;
+        // std::cout << "pixel position calculated: "<<u_in_cur_pixel<<", "<<v_in_cur_pixel<<std::endl;
         _error(0, 0) = GetPixelValue(img2, u_in_cur_pixel, v_in_cur_pixel) - _measurement(0, 0);
         _error(0, 1) = GetPixelValue(depth_img2, u_in_cur_pixel, v_in_cur_pixel) - _measurement(0, 1);
         //cout<<"_measurement(0, 0)= "<<_measurement(0, 0)<<endl<<"_measurement(0, 1)= "<<_measurement(0, 1)<<endl;
@@ -296,7 +299,7 @@ void DirectPoseEstimationSingleLayer(
         g2o::make_unique<BlockSolverType>(g2o::make_unique<LinearSolverType>()));
     g2o::SparseOptimizer optimizer; // 图模型
     optimizer.setAlgorithm(solver); // 设置求解器
-    optimizer.setVerbose(false);     // 打开调试输出
+    optimizer.setVerbose(false);    // 打开调试输出
 
     VertexPose *vertex_pose = new VertexPose(); // camera vertex_pose
     vertex_pose->setId(0);
@@ -339,8 +342,8 @@ void DirectPoseEstimationSingleLayer(
     //         Eigen::Vector3d point_cur = T21 * point_ref;
     //         if (point_cur[2] < 0) // depth invalid
     //             continue;
-    //         float u = fx * point_cur[0] / point_cur[2] + cx;
-    //         float v = fy * point_cur[1] / point_cur[2] + cy; // pixel position in the second image calculated
+    //         double u = fx * point_cur[0] / point_cur[2] + cx;
+    //         double v = fy * point_cur[1] / point_cur[2] + cy; // pixel position in the second image calculated
     //         if (u < half_patch_size || u > depth_img2.cols - half_patch_size || v < half_patch_size || v > depth_img2.rows - half_patch_size || GetPixelValue(depth_img2, u, v) <= min_depth || GetPixelValue(depth_img2, u, v) >= max_depth)
     //             continue; // skip the points out of sight
     //         new_px_ref.push_back(px_ref[i]);
