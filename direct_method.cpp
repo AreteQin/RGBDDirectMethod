@@ -82,6 +82,7 @@ public:
 class EdgeProjectionPoseOnly : public g2o::BaseUnaryEdge<2, Vec2, VertexPose>
 {
 public:
+    double depth_in_cur_cam_ = 0;
     EdgeProjectionPoseOnly(const cv::Mat &img1_,
                            const cv::Mat &img2_,
                            const Eigen::Vector2d &px_ref_,
@@ -99,7 +100,7 @@ public:
         // std::cout << "point_position_ref: "<<position_in_ref_cam<<std::endl;
         // std::cout << "pixel position calculated: "<<u_in_cur_pixel<<", "<<v_in_cur_pixel<<std::endl;
         _error(0, 0) = GetPixelValue(img2, u_in_cur_pixel, v_in_cur_pixel) - _measurement(0, 0);
-        _error(0, 1) = GetPixelValue(depth_img2, u_in_cur_pixel, v_in_cur_pixel) - _measurement(0, 1);
+        _error(0, 1) = depth_in_cur_cam_ - _measurement(0, 1);
         //cout<<"_measurement(0, 0)= "<<_measurement(0, 0)<<endl<<"_measurement(0, 1)= "<<_measurement(0, 1)<<endl;
     }
     virtual void linearizeOplus() override // 重写线性化函数，即得到泰勒展开e(x+delta_x)=e(x)+J^T*delta_x中的J，推导过程见14讲7.3.3
@@ -110,6 +111,8 @@ public:
         Eigen::Vector3d position_in_cur_cam = T * position_in_ref_cam;
         double u_in_cur_pixel = fx * position_in_cur_cam[0] / position_in_cur_cam[2] + cx;
         double v_in_cur_pixel = fy * position_in_cur_cam[1] / position_in_cur_cam[2] + cy;
+
+        depth_in_cur_cam_ = GetPixelValue(depth_img2, u_in_cur_pixel, v_in_cur_pixel);
 
         Eigen::Matrix<double, 1, 6> J_1, J_2, J_position_xi_Z;
         double X = position_in_cur_cam[0], Y = position_in_cur_cam[1], Z = position_in_cur_cam[2];
@@ -316,7 +319,7 @@ void DirectPoseEstimationSingleLayer(
         edge->setId(index);
         edge->setVertex(0, vertex_pose);
         Eigen::Matrix<double, 2, 1> measurements;
-        measurements << GetPixelValue(img1, px_ref[i][0], px_ref[i][1]), GetPixelValue(depth_img2, px_ref[i][0], px_ref[i][1]);
+        measurements << GetPixelValue(img1, px_ref[i][0], px_ref[i][1]), edge->depth_in_cur_cam_;
         edge->setMeasurement(measurements);
         edge->setInformation(Eigen::Matrix<double, 2, 2>::Identity());
         optimizer.addEdge(edge);
