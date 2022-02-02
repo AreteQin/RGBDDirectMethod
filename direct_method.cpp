@@ -97,14 +97,24 @@ public:
         Eigen::Vector3d position_in_cur_cam = T * position_in_ref_cam;
         double u_in_cur_pixel = fx * position_in_cur_cam[0] / position_in_cur_cam[2] + cx;
         double v_in_cur_pixel = fy * position_in_cur_cam[1] / position_in_cur_cam[2] + cy;
-        // std::cout << "T: "<<T.matrix() << std::endl;
-        // std::cout << "point_position_ref: "<<position_in_ref_cam<<std::endl;
-        // std::cout << "pixel position calculated: "<<u_in_cur_pixel<<", "<<v_in_cur_pixel<<std::endl;
-        _error(0, 0) = GetPixelValue(img2, u_in_cur_pixel, v_in_cur_pixel) - _measurement(0,0);
-        _error(1, 0) = 10*(depth_in_cur_cam_ - _measurement(1,0));
-        // cout<<"_error(0,0): "<<_error(0,0)<< endl;
-        // cout<<"_error(1,0): "<<_error(1,0)<< endl;
-        //cout<<"_measurement(0, 0)= "<<_measurement(0, 0)<<endl<<"_measurement(0, 1)= "<<_measurement(0, 1)<<endl;
+        if (u_in_cur_pixel < 1 || u_in_cur_pixel > depth_img2.cols - 1 || v_in_cur_pixel < 1 || v_in_cur_pixel > depth_img2.rows - 1) // out of sight in current frame
+        {
+            _error(0, 0) = 0.0;
+            _error(1, 0) = 0.0;
+        }
+        else if (depth_in_cur_cam_ < 1 || depth_in_cur_cam_ > 255)
+        {
+            _error(0, 0) = GetPixelValue(img2, u_in_cur_pixel, v_in_cur_pixel) - _measurement(0, 0);
+            _error(1, 0) = 0;
+        }
+        else
+        {
+            _error(0, 0) = GetPixelValue(img2, u_in_cur_pixel, v_in_cur_pixel) - _measurement(0, 0);
+            _error(1, 0) = 10 * (depth_in_cur_cam_ - _measurement(1, 0));
+        }
+        std::cout << _error(0, 0) <<", "<< _error(1, 0)<<". ";
+        //std::cout << "_error(0, 0)= " << _error(0, 0) << std::endl;
+        //std::cout<<"_error(1, 0)= "<<_error(1, 0)<<std::endl;
     }
     virtual void linearizeOplus() override // 重写线性化函数，即得到泰勒展开e(x+delta_x)=e(x)+J^T*delta_x中的J，推导过程见14讲7.3.3
     {
@@ -332,7 +342,7 @@ void DirectPoseEstimationSingleLayer(
     }
 
     optimizer.initializeOptimization();
-    optimizer.optimize(50);
+    optimizer.optimize(1);
     T21 = vertex_pose->estimate();
 
     cout << "T21 = \n"
