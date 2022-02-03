@@ -82,7 +82,6 @@ public:
 class EdgeProjectionPoseOnly : public g2o::BaseUnaryEdge<2, Vec2, VertexPose>
 {
 public:
-    double depth_in_cur_cam_ = 0;
     EdgeProjectionPoseOnly(const cv::Mat &img1_,
                            const cv::Mat &img2_,
                            const Eigen::Vector2d &px_ref_,
@@ -96,24 +95,25 @@ public:
         Eigen::Vector3d position_in_cur_cam = T * position_in_ref_cam;
         double u_in_cur_pixel = fx * position_in_cur_cam[0] / position_in_cur_cam[2] + cx;
         double v_in_cur_pixel = fy * position_in_cur_cam[1] / position_in_cur_cam[2] + cy;
-        // if (u_in_cur_pixel < 1 || u_in_cur_pixel > depth_img2.cols - 1 || v_in_cur_pixel < 1 || v_in_cur_pixel > depth_img2.rows - 1) // out of sight in current frame
-        // {
-        //     _error(0, 0) = 0.0;
-        //     _error(1, 0) = 0.0;
-        // }
-        // else if (depth_in_cur_cam_ < 1 || depth_in_cur_cam_ > 255)
-        // {
-        //     _error(0, 0) = GetPixelValue(img2, u_in_cur_pixel, v_in_cur_pixel) - _measurement(0, 0);
-        //     _error(1, 0) = 0;
-        // }
-        // else
-        // {
-        //     _error(0, 0) = GetPixelValue(img2, u_in_cur_pixel, v_in_cur_pixel) - _measurement(0, 0);
-        //     _error(1, 0) = 10 * (depth_in_cur_cam_ - position_in_cur_cam[2]);
-        //     std::cout << _error(0, 0) <<", "<< _error(1, 0)<<". ";
-        // }
-        _error(0, 0) = GetPixelValue(img2, u_in_cur_pixel, v_in_cur_pixel) - _measurement(0, 0);
-        _error(1, 0) = 10 * (depth_in_cur_cam_ - position_in_cur_cam[2]);
+
+        if (u_in_cur_pixel < 1 || u_in_cur_pixel > depth_img2.cols - 1 || v_in_cur_pixel < 1 || v_in_cur_pixel > depth_img2.rows - 1) // out of sight in current frame
+        {
+            _error(0, 0) = 0.0;
+            _error(1, 0) = 0.0;
+        }
+        else if (GetPixelValue(depth_img2, u_in_cur_pixel, v_in_cur_pixel) < 1 || GetPixelValue(depth_img2, u_in_cur_pixel, v_in_cur_pixel) > 255)
+        {
+            _error(0, 0) = GetPixelValue(img2, u_in_cur_pixel, v_in_cur_pixel) - _measurement(0, 0);
+            _error(1, 0) = 0;
+        }
+        else
+        {
+            _error(0, 0) = GetPixelValue(img2, u_in_cur_pixel, v_in_cur_pixel) - _measurement(0, 0);
+            _error(1, 0) = GetPixelValue(depth_img2, u_in_cur_pixel, v_in_cur_pixel) - _measurement(1, 0);
+            //std::cout << _error(0, 0) <<", "<< _error(1, 0)<<". ";
+        }
+        // _error(0, 0) = GetPixelValue(img2, u_in_cur_pixel, v_in_cur_pixel) - _measurement(0, 0);
+        // _error(1, 0) = 10 * (depth_in_cur_cam_ - position_in_cur_cam[2]);
         //std::cout << _error(0, 0) << ", " << _error(1, 0) << ". ";
     }
     virtual void linearizeOplus() override // 重写线性化函数，即得到泰勒展开e(x+delta_x)=e(x)+J^T*delta_x中的J，推导过程见14讲7.3.3
@@ -318,6 +318,7 @@ void DirectPoseEstimationSingleLayer(
     VertexPose *vertex_pose = new VertexPose(); // camera vertex_pose
     vertex_pose->setId(0);
     vertex_pose->setEstimate(T21);
+    //vertex_pose->setMarginalized(true);
     optimizer.addVertex(vertex_pose);
 
     // edges counter
@@ -329,8 +330,14 @@ void DirectPoseEstimationSingleLayer(
         EdgeProjectionPoseOnly *edge = new EdgeProjectionPoseOnly(img1, img2, px_ref[i], depth_ref[i], depth_img2);
         edge->setId(index);
         edge->setVertex(0, vertex_pose);
+
+        Eigen::Vector3d position_in_ref_cam = depth_ref[i] * Eigen::Vector3d((px_ref[i][0] - cx) / fx, (px_ref[i][1] - cy) / fy, 1); // 深度乘以归一化坐标就得到了相机坐标系下的三维点
+        Eigen::Vector3d position_in_cur_cam = vertex_pose->estimate() * position_in_ref_cam;
+        double u_in_cur_pixel = fx * position_in_cur_cam[0] / position_in_cur_cam[2] + cx;
+        double v_in_cur_pixel = fy * position_in_cur_cam[1] / position_in_cur_cam[2] + cy;
+
         Eigen::Matrix<double, 2, 1> measurements;
-        measurements << GetPixelValue(img1, px_ref[i][0], px_ref[i][1]), 0;
+        measurements << GetPixelValue(img1, px_ref[i][0], px_ref[i][1]), GetPixelValue(depth_img2, u_in_cur_pixel, v_in_cur_pixel);
         //cout<<"measurements: " <<measurements<<endl;
         edge->setMeasurement(measurements);
         edge->setInformation(Eigen::Matrix<double, 2, 2>::Identity());
@@ -339,7 +346,7 @@ void DirectPoseEstimationSingleLayer(
     }
 
     optimizer.initializeOptimization();
-    optimizer.optimize(1);
+    optimizer.optimize(100);
     T21 = vertex_pose->estimate();
 
     cout << "T21 = \n"
