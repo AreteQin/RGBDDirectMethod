@@ -346,7 +346,7 @@ void DirectPoseEstimationSingleLayer(
     }
 
     optimizer.initializeOptimization();
-    optimizer.optimize(100);
+    optimizer.optimize(10);
     T21 = vertex_pose->estimate();
 
     cout << "T21 = \n"
