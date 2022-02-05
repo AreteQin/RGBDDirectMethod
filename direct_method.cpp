@@ -24,8 +24,7 @@ typedef Eigen::Matrix<double, 2, 1> Vec2;
 
 // Camera intrinsics
 //double fx = 718.856, fy = 718.856, cx = 607.1928, cy = 185.2157;
-double fx = 726.28741455078,
-       fy = 726.28741455078, cx = 354.6496887207, cy = 186.46566772461;
+double fx = 726.28741455078, fy = 726.28741455078, cx = 354.6496887207, cy = 186.46566772461;
 
 double min_depth = 1.0;
 double max_depth = 255.0;
@@ -57,6 +56,18 @@ double GetPixelValue(const cv::Mat &img, double x, double y)
         xx * (1 - yy) * data[1] +
         (1 - xx) * yy * data[img.step] +
         xx * yy * data[img.step + 1]);
+}
+
+double TukeysBiweight(double error, double threshold_c)
+{
+    if (abs(error) > threshold_c)
+    {
+        return 0;
+    }
+    else
+    {
+        return abs(error * (1 - error * error / (threshold_c*threshold_c)) * (1 - error * error / (threshold_c*threshold_c)));
+    }
 }
 
 // G2O
@@ -93,28 +104,40 @@ public:
         Sophus::SE3d T = v->estimate();
         Eigen::Vector3d position_in_ref_cam = depth_ref * Eigen::Vector3d((px_ref[0] - cx) / fx, (px_ref[1] - cy) / fy, 1); // 深度乘以归一化坐标就得到了相机坐标系下的三维点
         Eigen::Vector3d position_in_cur_cam = T * position_in_ref_cam;
-        double u_in_cur_pixel = fx * position_in_cur_cam[0] / position_in_cur_cam[2] + cx;
-        double v_in_cur_pixel = fy * position_in_cur_cam[1] / position_in_cur_cam[2] + cy;
-
-        if (u_in_cur_pixel < 1 || u_in_cur_pixel > depth_img2.cols - 1 || v_in_cur_pixel < 1 || v_in_cur_pixel > depth_img2.rows - 1) // out of sight in current frame
+        // cout<<"position_in_cur_cam: "<<endl<<position_in_cur_cam<<endl;
+        // cout<< fx <<", "<<position_in_cur_cam[1] <<", "<<position_in_cur_cam[2]<<", "<< cx<<endl;
+        double u_in_cur_pixel = fx * position_in_cur_cam[1] / position_in_cur_cam[2] + cx;
+        double v_in_cur_pixel = fy * position_in_cur_cam[0] / position_in_cur_cam[2] + cy;
+        double I2 = GetPixelValue(img2, u_in_cur_pixel, v_in_cur_pixel);
+        double Z2 = static_cast<unsigned short>(depth_img2.data[int(u_in_cur_pixel) * depth_img2.step + int(v_in_cur_pixel)]);
+        if (v_in_cur_pixel < 1 || v_in_cur_pixel > depth_img2.cols - 1 || u_in_cur_pixel < 1 || u_in_cur_pixel > depth_img2.rows - 1) // out of sight in current frame
         {
             _error(0, 0) = 0.0;
             _error(1, 0) = 0.0;
         }
-        else if (GetPixelValue(depth_img2, u_in_cur_pixel, v_in_cur_pixel) < 1 || GetPixelValue(depth_img2, u_in_cur_pixel, v_in_cur_pixel) > 255)
+        else if (Z2 < 1 || Z2 > 255)
         {
-            _error(0, 0) = GetPixelValue(img2, u_in_cur_pixel, v_in_cur_pixel) - _measurement(0, 0);
+            _error(0, 0) = I2 - _measurement(0, 0);
             _error(1, 0) = 0;
         }
         else
         {
-            _error(0, 0) = GetPixelValue(img2, u_in_cur_pixel, v_in_cur_pixel) - _measurement(0, 0);
-            _error(1, 0) = GetPixelValue(depth_img2, u_in_cur_pixel, v_in_cur_pixel) - _measurement(1, 0);
-            //std::cout << _error(0, 0) <<", "<< _error(1, 0)<<". ";
+            _error(0, 0) = I2 - _measurement(0, 0);
+            _error(1, 0) = Z2 - _measurement(1, 0);
         }
-        // _error(0, 0) = GetPixelValue(img2, u_in_cur_pixel, v_in_cur_pixel) - _measurement(0, 0);
+        // _error(0, 0) = I2 - _measurement(0, 0);
         // _error(1, 0) = 10 * (depth_in_cur_cam_ - position_in_cur_cam[2]);
-        //std::cout << _error(0, 0) << ", " << _error(1, 0) << ". ";
+        // std::cout << _error(0, 0) << ", " << _error(1, 0) << ". "<<std::endl;
+        // _error(1, 0) = TukeysBiweight(_error(1, 0), 20);
+        // _error(0, 0) = TukeysBiweight(_error(0, 0), 50);
+        //     std::cout<<"current_depth_.col, row: "<<depth_img2.cols<<", "<<depth_img2.rows<<std::endl;
+        //     std::cout<<"u,v: "<<u_in_cur_pixel<<", "<<v_in_cur_pixel<<std::endl;
+        //     std::cout<<"I1: "<<_measurement(0,0)<<std::endl;
+        //     std::cout<<"I2: "<<I2<<std::endl;
+        //     std::cout<<"Zwrap: "<<_measurement(1,0)<<std::endl;
+        //     std::cout<<"Z2: "<<Z2<<std::endl;
+        //     std::cout <<"errors_tukeys: "<< _error(0, 0) << ", " << _error(1, 0) << ". "<<std::endl;
+
     }
     virtual void linearizeOplus() override // 重写线性化函数，即得到泰勒展开e(x+delta_x)=e(x)+J^T*delta_x中的J，推导过程见14讲7.3.3
     {
@@ -206,7 +229,7 @@ int main()
 
     TrajectoryType ground_truth_poses;
 
-    ifstream fin("./pose.txt");
+    ifstream fin("../pose.txt");
     if (!fin)
     {
         cerr << "请在有pose.txt的目录下运行此程序" << endl;
@@ -215,9 +238,9 @@ int main()
     vector<cv::Mat> color_images, depth_images;
     for (int i = 0; i < 5; i++)
     {
-        boost::format fmt("./%s/%d.%s");
+        boost::format fmt("../%s/%d.%s");
         color_images.push_back(cv::imread((fmt % "color" % (i + 1) % "png").str(), cv::IMREAD_COLOR));
-        depth_images.push_back(cv::imread((fmt % "depth" % (i + 1) % "png").str(), cv::IMREAD_ANYDEPTH));
+        depth_images.push_back(cv::imread((fmt % "depth" % (i + 1) % "png").str(), cv::IMREAD_UNCHANGED));
 
         double data[7] = {0};
         for (auto &d : data)
@@ -252,8 +275,8 @@ int main()
     poses.push_back(T_0);
 
     // try single layer by uncomment this line
-    //DirectPoseEstimationSingleLayer(color_images[0], color_images[1], pixels_ref, depth_ref, depth_images[1], T_cur_ref);
-    DirectPoseEstimationMultiLayer(color_images[0], color_images[1], pixels_ref, depth_ref, depth_images[1], T_cur_ref);
+    DirectPoseEstimationSingleLayer(color_images[0], color_images[1], pixels_ref, depth_ref, depth_images[1], T_cur_ref);
+    //DirectPoseEstimationMultiLayer(color_images[0], color_images[1], pixels_ref, depth_ref, depth_images[1], T_cur_ref);
 
     //poses.push_back(T_cur_ref);
     poses.push_back(T_cur_ref);
@@ -333,11 +356,11 @@ void DirectPoseEstimationSingleLayer(
 
         Eigen::Vector3d position_in_ref_cam = depth_ref[i] * Eigen::Vector3d((px_ref[i][0] - cx) / fx, (px_ref[i][1] - cy) / fy, 1); // 深度乘以归一化坐标就得到了相机坐标系下的三维点
         Eigen::Vector3d position_in_cur_cam = vertex_pose->estimate() * position_in_ref_cam;
-        double u_in_cur_pixel = fx * position_in_cur_cam[0] / position_in_cur_cam[2] + cx;
-        double v_in_cur_pixel = fy * position_in_cur_cam[1] / position_in_cur_cam[2] + cy;
+        // double u_in_cur_pixel = fx * position_in_cur_cam[0] / position_in_cur_cam[2] + cx;
+        // double v_in_cur_pixel = fy * position_in_cur_cam[1] / position_in_cur_cam[2] + cy;
 
         Eigen::Matrix<double, 2, 1> measurements;
-        measurements << GetPixelValue(img1, px_ref[i][0], px_ref[i][1]), GetPixelValue(depth_img2, u_in_cur_pixel, v_in_cur_pixel);
+        measurements << GetPixelValue(img1, px_ref[i][0], px_ref[i][1]), position_in_cur_cam[2] ;
         //cout<<"measurements: " <<measurements<<endl;
         edge->setMeasurement(measurements);
         edge->setInformation(Eigen::Matrix<double, 2, 2>::Identity());
@@ -429,7 +452,7 @@ void DirectPoseEstimationMultiLayer(
     // cout << "pyramid images Generated" << endl;
 
     double fxG = fx, fyG = fy, cxG = cx, cyG = cy; // backup the old values
-    for (int level = pyramids - 1; level >= 0; level--)
+    for (int level = pyramids - 2; level >= 0; level--)
     {
         VecVector2d px_ref_pyr; // set the keypoints in this pyramid level
         for (auto &px : px_ref)
@@ -438,11 +461,13 @@ void DirectPoseEstimationMultiLayer(
         }
 
         // scale fx, fy, cx, cy in different pyramid levels
+        cout<<"fxG: "<<fxG<<", scale: "<<scales[level]<<", level: "<<level<<endl;
         fx = fxG * scales[level];
         fy = fyG * scales[level];
         cx = cxG * scales[level];
         cy = cyG * scales[level];
         // cout << "into signal layer Direct method" << endl;
+        cout<<"fx,fy,cx,cy: "<<fx<<", "<<fy<<", "<<cx<<", "<<cy<<", "<<endl;
         DirectPoseEstimationSingleLayer(pyr1[level], pyr2[level], px_ref_pyr, depth_ref, depth_pyr2[level], T21);
     }
 }
