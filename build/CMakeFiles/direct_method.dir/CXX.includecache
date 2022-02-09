@@ -6,7 +6,7 @@
 
 #IncludeRegexTransform: 
 
-/home/qin/Downloads/RGBDDirectMethod/direct_method.cpp
+/home/qin/Downloads/RGBDDirectMethod-ma/direct_method.cpp
 opencv2/opencv.hpp
 -
 sophus/se3.hpp

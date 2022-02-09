@@ -1,3 +1,0 @@
-/home/qin/Downloads/RGBDDirectMethod/CMakeFiles/rebuild_cache.dir
-/home/qin/Downloads/RGBDDirectMethod/CMakeFiles/edit_cache.dir
-/home/qin/Downloads/RGBDDirectMethod/CMakeFiles/direct_method.dir
