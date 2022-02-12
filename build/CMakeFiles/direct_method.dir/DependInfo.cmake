@@ -4,7 +4,7 @@ set(CMAKE_DEPENDS_LANGUAGES
   )
 # The set of files for implicit dependencies of each language:
 set(CMAKE_DEPENDS_CHECK_CXX
-  "/home/qin/Downloads/RGBDDirectMethod-ma/direct_method.cpp" "/home/qin/Downloads/RGBDDirectMethod-ma/build/CMakeFiles/direct_method.dir/direct_method.cpp.o"
+  "/home/qin/Downloads/RGBDDirectMethod/direct_method.cpp" "/home/qin/Downloads/RGBDDirectMethod/build/CMakeFiles/direct_method.dir/direct_method.cpp.o"
   )
 set(CMAKE_CXX_COMPILER_ID "GNU")
 
