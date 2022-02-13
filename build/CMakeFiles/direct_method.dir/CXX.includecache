@@ -35,8 +35,6 @@ g2o/core/solver.h
 -
 g2o/core/sparse_optimizer.h
 -
-g2o/solvers/csparse/linear_solver_csparse.h
--
 g2o/solvers/dense/linear_solver_dense.h
 -
 

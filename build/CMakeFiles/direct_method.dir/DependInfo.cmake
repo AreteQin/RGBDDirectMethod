@@ -21,7 +21,6 @@ set(CMAKE_TARGET_DEFINITIONS_CXX
 
 # The include file search paths:
 set(CMAKE_CXX_TARGET_INCLUDE_PATH
-  "/usr/include/suitesparse"
   "/usr/include/opencv4"
   "/usr/include/eigen3"
   "/home/qin/Pangolin/components/pango_core/include"

@@ -10,8 +10,8 @@ list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake_modules) # Add element
 find_package(OpenCV 4 REQUIRED)
 find_package(Sophus REQUIRED)
 find_package(Pangolin REQUIRED) # used to show pointcloud
-find_package(CSparse REQUIRED)
-include_directories(${CSPARSE_INCLUDE_DIR})
+# find_package(CSparse REQUIRED)
+# include_directories(${CSPARSE_INCLUDE_DIR})
 find_package(G2O REQUIRED)
 include_directories(${G2O_INCLUDE_DIRS}) 
 
@@ -24,4 +24,4 @@ include_directories(
 )
 
 add_executable(direct_method direct_method.cpp)
-target_link_libraries(direct_method ${OpenCV_LIBS} ${Pangolin_LIBRARIES} g2o_core g2o_stuff g2o_types_sba g2o_solver_csparse g2o_csparse_extension Sophus::Sophus)
+target_link_libraries(direct_method ${OpenCV_LIBS} ${Pangolin_LIBRARIES} g2o_core g2o_stuff g2o_types_sba g2o_solver_csparse Sophus::Sophus)

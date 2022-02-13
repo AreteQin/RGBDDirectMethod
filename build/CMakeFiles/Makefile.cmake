@@ -11,7 +11,6 @@ set(CMAKE_MAKEFILE_DEPENDS
   "CMakeFiles/3.16.3/CMakeCCompiler.cmake"
   "CMakeFiles/3.16.3/CMakeCXXCompiler.cmake"
   "CMakeFiles/3.16.3/CMakeSystem.cmake"
-  "../cmake_modules/FindCSparse.cmake"
   "../cmake_modules/FindG2O.cmake"
   "/home/qin/Pangolin/build/PangolinConfig.cmake"
   "/home/qin/Pangolin/build/PangolinConfigVersion.cmake"
