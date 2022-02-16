@@ -22,18 +22,28 @@ typedef vector<Eigen::Vector2d, Eigen::aligned_allocator<Eigen::Vector2d>> VecVe
 typedef vector<Sophus::SE3d, Eigen::aligned_allocator<Sophus::SE3d>> TrajectoryType;
 typedef Eigen::Matrix<double, 2, 1> Vec2;
 
-// Camera intrinsics
-//double fx = 718.856, fy = 718.856, cx = 607.1928, cy = 185.2157;
-double fx = 726.28741455078, fy = 726.28741455078, cx = 354.6496887207, cy = 186.46566772461;
-
 double min_depth = 1.0;
 double max_depth = 255.0;
 const int half_patch_size = 1;
+// Camera intrinsics
+double fx = 726.28741455078, fy = 726.28741455078, cx = 354.6496887207, cy = 186.46566772461;
 
 // useful typedefs
 typedef Eigen::Matrix<double, 6, 6> Matrix6d;
 typedef Eigen::Matrix<double, 2, 6> Matrix26d;
 typedef Eigen::Matrix<double, 6, 1> Vector6d;
+
+// cast char to string
+void tokenize(std::string const &str, const char delim,
+              std::vector<std::string> &out) {
+    size_t start;
+    size_t end = 0;
+
+    while ((start = str.find_first_not_of(delim, end)) != std::string::npos) {
+        end = str.find(delim, start);
+        out.push_back(str.substr(start, end - start));
+    }
+}
 
 // 得到3D点在图像中像素坐标后，获取该像素的灰度或深度
 double GetPixelValue(const cv::Mat &img, double x, double y) {
@@ -70,20 +80,20 @@ double TukeysBiweight(double error, double threshold_c) {
 /// vertex used in g2o ba
 class VertexPose : public g2o::BaseVertex<6, Sophus::SE3d> {
 public:
-    virtual void setToOriginImpl() override {
+    void setToOriginImpl() override {
         _estimate = Sophus::SE3d();
     }
 
     /// left multiplication on SE3
-    virtual void oplusImpl(const double *update) override {
+    void oplusImpl(const double *update) override {
         Eigen::Matrix<double, 6, 1> update_eigen;
         update_eigen << update[0], update[1], update[2], update[3], update[4], update[5];
         _estimate = Sophus::SE3d::exp(update_eigen) * _estimate;
     }
 
-    virtual bool read(istream &in) override {}
+    bool read(istream &in) override {}
 
-    virtual bool write(ostream &out) const override {}
+    bool write(ostream &out) const override {}
 };
 
 /// 定义仅优化位姿的一元边，2表示观测值的维度，Vec2表示观测值的数据类型是一个2×1的向量，VertexPose表示定点的数据类型
@@ -96,8 +106,8 @@ public:
                            const cv::Mat &depth_img2_) : img1(img1_), img2(img2_), px_ref(px_ref_),
                                                          depth_ref(depth_ref_), depth_img2(depth_img2_) {}
 
-    virtual void computeError() override {
-        const VertexPose *v = static_cast<VertexPose *>(_vertices[0]); // _vertices[0]表示这条边所链接的地一个顶点，由于是一元边，因此只有_vertices[0]，若是二元边则还会存在_vertices[1]
+    void computeError() override {
+        const VertexPose *v = dynamic_cast<VertexPose *>(_vertices[0]); // _vertices[0]表示这条边所链接的地一个顶点，由于是一元边，因此只有_vertices[0]，若是二元边则还会存在_vertices[1]
         Sophus::SE3d T = v->estimate();
         Eigen::Vector3d position_in_ref_cam = depth_ref *
                                               Eigen::Vector3d((px_ref[0] - cx) / fx, (px_ref[1] - cy) / fy,
@@ -125,8 +135,8 @@ public:
         // _error(0, 0) = I2 - _measurement(0, 0);
         // _error(1, 0) = 10 * (depth_in_cur_cam_ - position_in_cur_cam[2]);
         // std::cout << _error(0, 0) << ", " << _error(1, 0) << ". "<<std::endl;
-        // _error(1, 0) = TukeysBiweight(_error(1, 0), 20);
-        // _error(0, 0) = TukeysBiweight(_error(0, 0), 50);
+        _error(1, 0) = TukeysBiweight(_error(1, 0), 20);
+        _error(0, 0) = TukeysBiweight(_error(0, 0), 50);
         //     std::cout<<"current_depth_.col, row: "<<depth_img2.cols<<", "<<depth_img2.rows<<std::endl;
         //     std::cout<<"u,v: "<<u_in_cur_pixel<<", "<<v_in_cur_pixel<<std::endl;
         //     std::cout<<"I1: "<<_measurement(0,0)<<std::endl;
@@ -137,9 +147,9 @@ public:
 
     }
 
-    virtual void linearizeOplus() override // 重写线性化函数，即得到泰勒展开e(x+delta_x)=e(x)+J^T*delta_x中的J，推导过程见14讲7.3.3
+    void linearizeOplus() override // 重写线性化函数，即得到泰勒展开e(x+delta_x)=e(x)+J^T*delta_x中的J，推导过程见14讲7.3.3
     {
-        const VertexPose *v = static_cast<VertexPose *>(_vertices[0]);
+        const VertexPose *v = dynamic_cast<VertexPose *>(_vertices[0]);
         Sophus::SE3d T = v->estimate();
         Eigen::Vector3d position_in_ref_cam = depth_ref *
                                               Eigen::Vector3d((px_ref[0] - cx) / fx, (px_ref[1] - cy) / fy,
@@ -195,9 +205,9 @@ public:
                 J_2[0], J_2[1], J_2[2], J_2[3], J_2[4], J_2[5];
     }
 
-    virtual bool read(istream &in) override {}
+    bool read(istream &in) override {}
 
-    virtual bool write(ostream &out) const override {}
+    bool write(ostream &out) const override {}
 
 private:
     const Eigen::Vector2d px_ref;
@@ -211,7 +221,7 @@ void DirectPoseEstimationMultiLayer(
         cv::Mat img1,
         cv::Mat img2,
         const VecVector2d &px_ref,
-        const vector<double> depth_ref,
+        const vector<double> &depth_ref,
         const cv::Mat &depth_img2,
         Sophus::SE3d &T21);
 
@@ -219,7 +229,7 @@ void DirectPoseEstimationSingleLayer(
         const cv::Mat &img1,
         const cv::Mat &img2,
         const VecVector2d &px_ref,
-        const vector<double> depth_ref,
+        const vector<double> &depth_ref,
         const cv::Mat &depth_img2,
         Sophus::SE3d &T21);
 
@@ -230,39 +240,41 @@ void showPointCloud(
         const vector<Vector6d, Eigen::aligned_allocator<Vector6d>> &pointcloud);
 
 int main() {
-    boost::format fmt("./%s/%06d.png"); //图像文件格式
 
-    TrajectoryType ground_truth_poses;
+    string dataset_path_ = "/home/qin/Downloads/mannequin_face_2";
+    std::ifstream dataset_path(dataset_path_ + "/calibration.txt");
 
-    ifstream fin("../pose.txt");
-    if (!fin) {
-        cerr << "请在有pose.txt的目录下运行此程序" << endl;
-        return 1;
+    if (!dataset_path) {
+        cout << "cannot find " << dataset_path_ << "/calibration.txt";
     }
-    vector<cv::Mat> color_images, depth_images;
-    for (int i = 0; i < 5; i++) {
-        boost::format fmt("../%s/%d.%s");
-        color_images.push_back(cv::imread((fmt % "color" % (i + 1) % "png").str(), cv::IMREAD_COLOR));
-        depth_images.push_back(cv::imread((fmt % "depth" % (i + 1) % "png").str(), cv::IMREAD_UNCHANGED));
 
-        double data[7] = {0};
-        for (auto &d: data)
-            fin >> d;
-        Sophus::SE3d pose(Eigen::Quaterniond(data[6], data[3], data[4], data[5]),
-                          Eigen::Vector3d(data[0], data[1], data[2]));
-        ground_truth_poses.push_back(pose);
+    // read images
+    std::ifstream image_stamps(dataset_path_ + "/associated.txt");
+    vector<cv::Mat> depth_images_, color_images_;
+    if (!image_stamps) {
+        std::cout << "cannot find " << dataset_path_ << "/associated.txt" << std::endl;
+    } else // file exists
+    {
+        std::string line;
+        while (getline(image_stamps, line)) {
+            std::vector<std::string> each_in_line;
+            tokenize(line, ' ', each_in_line);
+            depth_images_.push_back(cv::imread((dataset_path_ + "/" + each_in_line[3]), cv::IMREAD_UNCHANGED));
+            color_images_.push_back(cv::imread((dataset_path_ + "/" + each_in_line[1]), cv::IMREAD_COLOR));
+        }
     }
-    cout << "file read" << endl;
+    image_stamps.close();
+    std::cout << depth_images_.size() << " pairs of images found." << std::endl;
 
     vector<VecVector2d> pixels_refs;
     vector<vector<double>> depth_refs;
     // generate pixels in ref and load depth data
-    for (int i = 0; i < 5; i++) {
+    for (int i = 0; i < depth_images_.size()-1; i++) {
         VecVector2d pixels_ref;
         vector<double> depth_ref;
-        for (int k = 0; k < color_images[i].rows; k++) {
-            for (int h = 0; h < color_images[i].cols; h++) {
-                double depth1 = depth_images[i].at<uchar>(k, h);
+        for (int k = 0; k < color_images_[i].rows; k++) {
+            for (int h = 0; h < color_images_[i].cols; h++) {
+                double depth1 = depth_images_[i].at<uchar>(k, h);
                 if (depth1 < min_depth || depth1 > max_depth)
                     continue;
                 depth_ref.push_back(depth1);
@@ -276,29 +288,29 @@ int main() {
 
     std::cout << "points generated" << endl;
 
-    // estimates 01~05.png's pose using this information
-    //vector<Sophus::SE3d> poses;
     TrajectoryType poses;
     Sophus::SE3d T_cur_ref;
     Sophus::SE3d T_0;
     poses.push_back(T_0);
 
-    DirectPoseEstimationSingleLayer(color_images[0], color_images[1], pixels_refs[0],
+    DirectPoseEstimationSingleLayer(color_images_[0], color_images_[1], pixels_refs[0],
                                     depth_refs[0],
-                                    depth_images[1],
+                                    depth_images_[1],
                                     T_cur_ref);
     poses.push_back(T_cur_ref);
 
-    for (int i = 2; i < 5; i++) {
-        DirectPoseEstimationSingleLayer(color_images[i - 1], color_images[i], pixels_refs[i - 1],
+    for (int i = 2; i < depth_images_.size()-1; i++) {
+        DirectPoseEstimationSingleLayer(color_images_[i - 1], color_images_[i], pixels_refs[i - 1],
                                         depth_refs[i - 1],
-                                        depth_images[i],
+                                        depth_images_[i],
                                         T_cur_ref);
 //        DirectPoseEstimationMultiLayer(color_images[i-1], color_images[i], pixels_refs[i-1], depth_refs[i-1],
 //                                       depth_images[i],
 //                                       T_cur_ref);
         //poses.push_back(T_cur_ref);
-        poses.push_back(T_cur_ref * poses[i-1]);
+        poses.push_back(T_cur_ref * poses[i - 1]);
+        cout << "T"<< i-1 <<"= \n"
+                << (T_cur_ref * poses[i - 1]).matrix() << endl;
     }
     cout << "poses calculated" << endl;
 
@@ -306,10 +318,10 @@ int main() {
     vector<Vector6d, Eigen::aligned_allocator<Vector6d>> pointcloud;
     pointcloud.reserve(1000000);
 
-    for (int i = 0; i < 4; i++) {
-        cout << "转换图像中: " << i + 1 << endl;
-        cv::Mat color = color_images[i];
-        cv::Mat depth = depth_images[i];
+    for (int i = 0; i < depth_images_.size()-1; i++) {
+        cout << "generating point cloud: " << i + 1 << endl;
+        cv::Mat color = color_images_[i];
+        cv::Mat depth = depth_images_[i];
         Sophus::SE3d T = poses[i];
         cout << "T" << i << ": " << endl
              << T.matrix() << endl;
@@ -323,19 +335,16 @@ int main() {
                 point[0] = (u - cx) * point[2] / fx;
                 point[1] = (v - cy) * point[2] / fy;
                 Eigen::Vector3d pointWorld = T * point;
-                //cout<<"point "<<u+v<<": "<<endl<<pointWorld<< endl;
-
                 Vector6d p;
                 p.head<3>() = pointWorld;
                 p[5] = color.data[v * color.step + u * color.channels()];     // blue
                 p[4] = color.data[v * color.step + u * color.channels() + 1]; // green
                 p[3] = color.data[v * color.step + u * color.channels() + 2]; // red
                 pointcloud.push_back(p);
-                //cout<<p<<endl<<endl;
             }
     }
 
-    cout << "点云共有" << pointcloud.size() << "个点." << endl;
+    cout << "generated" << pointcloud.size() << "points" << endl;
 
     showPointCloud(pointcloud);
 }
@@ -344,7 +353,7 @@ void DirectPoseEstimationSingleLayer(
         const cv::Mat &img1,
         const cv::Mat &img2,
         const VecVector2d &px_ref,
-        const vector<double> depth_ref,
+        const vector<double> &depth_ref,
         const cv::Mat &depth_img2,
         Sophus::SE3d &T21) {
     // 构建图优化，先设定g2o
@@ -393,9 +402,6 @@ void DirectPoseEstimationSingleLayer(
     optimizer.optimize(10);
     T21 = vertex_pose->estimate();
 
-    cout << "T21 = \n"
-         << T21.matrix() << endl;
-
     // // plot the projected pixels here
     // cv::Mat img2_show;
     // //cv::cvtColor(img2, img2_show, cv::COLOR_GRAY2BGR);
@@ -437,7 +443,7 @@ void DirectPoseEstimationMultiLayer(
         cv::Mat img1,
         cv::Mat img2,
         const VecVector2d &px_ref,
-        const vector<double> depth_ref,
+        const vector<double> &depth_ref,
         const cv::Mat &depth_img2,
         Sophus::SE3d &T21) {
     cv::cvtColor(img1, img1, cv::COLOR_BGR2GRAY);
