@@ -28,7 +28,7 @@ const int half_patch_size = 1;
 // Camera intrinsics
 double fx = 726.28741455078, fy = 726.28741455078, cx = 354.6496887207, cy = 186.46566772461;
 
-const string dataset_path_ = "/home/qin/Documents/mannequin_face_2";
+const string dataset_path_ = "/home/qin/Ubuntu/mannequin_face_2";
 
 // useful typedefs
 typedef Eigen::Matrix<double, 6, 6> Matrix6d;
