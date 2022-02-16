@@ -1,4 +1,4 @@
-C:\Windows\system32\wsl.exe --distribution Ubuntu --exec /bin/bash -c "export CLION_IDE=TRUE && export JETBRAINS_IDE=TRUE && cd /home/qin/Downloads/RGBDDirectMethod/cmake-build-debug && /usr/bin/cmake -DCMAKE_BUILD_TYPE=Debug -G 'CodeBlocks - Unix Makefiles' /home/qin/Downloads/RGBDDirectMethod"
+C:\Windows\system32\wsl.exe --distribution Ubuntu --exec /bin/bash -c "export CLION_IDE=TRUE && export JETBRAINS_IDE=TRUE && cd /home/qin/Documents/RGBDDirectMethod/cmake-build-debug && /usr/bin/cmake -DCMAKE_BUILD_TYPE=Debug -G 'CodeBlocks - Unix Makefiles' /home/qin/Documents/RGBDDirectMethod"
 -- The C compiler identification is GNU 9.3.0
 -- The CXX compiler identification is GNU 9.3.0
 -- Check for working C compiler: /usr/bin/cc
@@ -25,4 +25,4 @@ C:\Windows\system32\wsl.exe --distribution Ubuntu --exec /bin/bash -c "export CL
 -- Found Threads: TRUE  
 -- Configuring done
 -- Generating done
--- Build files have been written to: /home/qin/Downloads/RGBDDirectMethod/cmake-build-debug
+-- Build files have been written to: /home/qin/Documents/RGBDDirectMethod/cmake-build-debug

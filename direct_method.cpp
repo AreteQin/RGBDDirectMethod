@@ -28,6 +28,8 @@ const int half_patch_size = 1;
 // Camera intrinsics
 double fx = 726.28741455078, fy = 726.28741455078, cx = 354.6496887207, cy = 186.46566772461;
 
+const string dataset_path_ = "/home/qin/Documents/mannequin_face_2";
+
 // useful typedefs
 typedef Eigen::Matrix<double, 6, 6> Matrix6d;
 typedef Eigen::Matrix<double, 2, 6> Matrix26d;
@@ -241,7 +243,6 @@ void showPointCloud(
 
 int main() {
 
-    string dataset_path_ = "/home/qin/Downloads/mannequin_face_2";
     std::ifstream dataset_path(dataset_path_ + "/calibration.txt");
 
     if (!dataset_path) {
