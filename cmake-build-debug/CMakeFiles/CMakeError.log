@@ -1,23 +1,27 @@
 Performing C SOURCE FILE Test CMAKE_HAVE_LIBC_PTHREAD failed with the following output:
 Change Dir: /home/qin/Downloads/RGBDDirectMethod/cmake-build-debug/CMakeFiles/CMakeTmp
 
-Run Build Command(s):/snap/clion/180/bin/ninja/linux/ninja cmTC_56adc && [1/2] Building C object CMakeFiles/cmTC_56adc.dir/src.c.o
-[2/2] Linking C executable cmTC_56adc
-FAILED: cmTC_56adc 
-: && /usr/bin/cc  -rdynamic CMakeFiles/cmTC_56adc.dir/src.c.o -o cmTC_56adc   && :
-/usr/bin/ld: CMakeFiles/cmTC_56adc.dir/src.c.o: in function `main':
+Run Build Command(s):/usr/bin/make cmTC_eda29/fast && /usr/bin/make -f CMakeFiles/cmTC_eda29.dir/build.make CMakeFiles/cmTC_eda29.dir/build
+make[1]: Entering directory '/home/qin/Downloads/RGBDDirectMethod/cmake-build-debug/CMakeFiles/CMakeTmp'
+Building C object CMakeFiles/cmTC_eda29.dir/src.c.o
+/usr/bin/cc   -DCMAKE_HAVE_LIBC_PTHREAD   -o CMakeFiles/cmTC_eda29.dir/src.c.o   -c /home/qin/Downloads/RGBDDirectMethod/cmake-build-debug/CMakeFiles/CMakeTmp/src.c
+Linking C executable cmTC_eda29
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_eda29.dir/link.txt --verbose=1
+/usr/bin/cc  -DCMAKE_HAVE_LIBC_PTHREAD    -rdynamic CMakeFiles/cmTC_eda29.dir/src.c.o  -o cmTC_eda29 
+/usr/bin/ld: CMakeFiles/cmTC_eda29.dir/src.c.o: in function `main':
 src.c:(.text+0x46): undefined reference to `pthread_create'
 /usr/bin/ld: src.c:(.text+0x52): undefined reference to `pthread_detach'
-/usr/bin/ld: src.c:(.text+0x5e): undefined reference to `pthread_cancel'
-/usr/bin/ld: src.c:(.text+0x6f): undefined reference to `pthread_join'
+/usr/bin/ld: src.c:(.text+0x63): undefined reference to `pthread_join'
 collect2: error: ld returned 1 exit status
-ninja: build stopped: subcommand failed.
+make[1]: *** [CMakeFiles/cmTC_eda29.dir/build.make:87: cmTC_eda29] Error 1
+make[1]: Leaving directory '/home/qin/Downloads/RGBDDirectMethod/cmake-build-debug/CMakeFiles/CMakeTmp'
+make: *** [Makefile:121: cmTC_eda29/fast] Error 2
 
 
 Source file was:
 #include <pthread.h>
 
-static void* test_func(void* data)
+void* test_func(void* data)
 {
   return data;
 }
@@ -27,7 +31,6 @@ int main(void)
   pthread_t thread;
   pthread_create(&thread, NULL, test_func, NULL);
   pthread_detach(thread);
-  pthread_cancel(thread);
   pthread_join(thread, NULL);
   pthread_atfork(NULL, NULL, NULL);
   pthread_exit(NULL);
@@ -38,13 +41,18 @@ int main(void)
 Determining if the function pthread_create exists in the pthreads failed with the following output:
 Change Dir: /home/qin/Downloads/RGBDDirectMethod/cmake-build-debug/CMakeFiles/CMakeTmp
 
-Run Build Command(s):/snap/clion/180/bin/ninja/linux/ninja cmTC_578fa && [1/2] Building C object CMakeFiles/cmTC_578fa.dir/CheckFunctionExists.c.o
-[2/2] Linking C executable cmTC_578fa
-FAILED: cmTC_578fa 
-: && /usr/bin/cc -DCHECK_FUNCTION_EXISTS=pthread_create -rdynamic CMakeFiles/cmTC_578fa.dir/CheckFunctionExists.c.o -o cmTC_578fa  -lpthreads && :
+Run Build Command(s):/usr/bin/make cmTC_598fb/fast && /usr/bin/make -f CMakeFiles/cmTC_598fb.dir/build.make CMakeFiles/cmTC_598fb.dir/build
+make[1]: Entering directory '/home/qin/Downloads/RGBDDirectMethod/cmake-build-debug/CMakeFiles/CMakeTmp'
+Building C object CMakeFiles/cmTC_598fb.dir/CheckFunctionExists.c.o
+/usr/bin/cc   -DCHECK_FUNCTION_EXISTS=pthread_create   -o CMakeFiles/cmTC_598fb.dir/CheckFunctionExists.c.o   -c /usr/share/cmake-3.16/Modules/CheckFunctionExists.c
+Linking C executable cmTC_598fb
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_598fb.dir/link.txt --verbose=1
+/usr/bin/cc  -DCHECK_FUNCTION_EXISTS=pthread_create    -rdynamic CMakeFiles/cmTC_598fb.dir/CheckFunctionExists.c.o  -o cmTC_598fb  -lpthreads 
 /usr/bin/ld: cannot find -lpthreads
 collect2: error: ld returned 1 exit status
-ninja: build stopped: subcommand failed.
+make[1]: *** [CMakeFiles/cmTC_598fb.dir/build.make:87: cmTC_598fb] Error 1
+make[1]: Leaving directory '/home/qin/Downloads/RGBDDirectMethod/cmake-build-debug/CMakeFiles/CMakeTmp'
+make: *** [Makefile:121: cmTC_598fb/fast] Error 2
 
 
 
