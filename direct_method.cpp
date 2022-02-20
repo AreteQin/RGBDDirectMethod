@@ -28,7 +28,7 @@ const int half_patch_size = 1;
 // Camera intrinsics
 double fx = 726.28741455078, fy = 726.28741455078, cx = 354.6496887207, cy = 186.46566772461;
 
-const string dataset_path_ = "/home/qin/Documents/mannequin_face_2";
+const string dataset_path_ = "/home/qin/Ubuntu/mannequin_face_2";
 
 // useful typedefs
 typedef Eigen::Matrix<double, 6, 6> Matrix6d;
@@ -89,7 +89,8 @@ public:
     /// left multiplication on SE3
     void oplusImpl(const double *update) override {
         Eigen::Matrix<double, 6, 1> update_eigen;
-        update_eigen << update[0], update[1], update[2], update[3], update[4], update[5];
+        update_eigen
+                << update[0], update[1], update[2], update[3], update[4], update[5];
         _estimate = Sophus::SE3d::exp(update_eigen) * _estimate;
     }
 
@@ -105,25 +106,36 @@ public:
                            const cv::Mat &img2_,
                            const Eigen::Vector2d &px_ref_,
                            const double &depth_ref_,
-                           const cv::Mat &depth_img2_) : img1(img1_), img2(img2_), px_ref(px_ref_),
-                                                         depth_ref(depth_ref_), depth_img2(depth_img2_) {}
+                           const cv::Mat &depth_img2_) : img1(img1_),
+                                                         img2(img2_),
+                                                         px_ref(px_ref_),
+                                                         depth_ref(depth_ref_),
+                                                         depth_img2(
+                                                                 depth_img2_) {}
 
     void computeError() override {
         const VertexPose *v = dynamic_cast<VertexPose *>(_vertices[0]); // _vertices[0]表示这条边所链接的地一个顶点，由于是一元边，因此只有_vertices[0]，若是二元边则还会存在_vertices[1]
         Sophus::SE3d T = v->estimate();
         Eigen::Vector3d position_in_ref_cam = depth_ref *
-                                              Eigen::Vector3d((px_ref[0] - cx) / fx, (px_ref[1] - cy) / fy,
-                                                              1); // 深度乘以归一化坐标就得到了相机坐标系下的三维点
+                                              Eigen::Vector3d(
+                                                      (px_ref[0] - cx) / fx,
+                                                      (px_ref[1] - cy) / fy,
+                                                      1); // 深度乘以归一化坐标就得到了相机坐标系下的三维点
         Eigen::Vector3d position_in_cur_cam = T * position_in_ref_cam;
         // cout<<"position_in_cur_cam: "<<endl<<position_in_cur_cam<<endl;
         // cout<< fx <<", "<<position_in_cur_cam[1] <<", "<<position_in_cur_cam[2]<<", "<< cx<<endl;
-        double u_in_cur_pixel = fx * position_in_cur_cam[1] / position_in_cur_cam[2] + cx;
-        double v_in_cur_pixel = fy * position_in_cur_cam[0] / position_in_cur_cam[2] + cy;
+        double u_in_cur_pixel =
+                fx * position_in_cur_cam[1] / position_in_cur_cam[2] + cx;
+        double v_in_cur_pixel =
+                fy * position_in_cur_cam[0] / position_in_cur_cam[2] + cy;
         double I2 = GetPixelValue(img2, u_in_cur_pixel, v_in_cur_pixel);
-        double Z2 = static_cast<unsigned short>(depth_img2.data[int(u_in_cur_pixel) * depth_img2.step +
-                                                                int(v_in_cur_pixel)]);
-        if (v_in_cur_pixel < 1 || v_in_cur_pixel > depth_img2.cols - 1 || u_in_cur_pixel < 1 ||
-            u_in_cur_pixel > depth_img2.rows - 1) // out of sight in current frame
+        double Z2 = static_cast<unsigned short>(depth_img2.data[
+                int(u_in_cur_pixel) * depth_img2.step +
+                int(v_in_cur_pixel)]);
+        if (v_in_cur_pixel < 1 || v_in_cur_pixel > depth_img2.cols - 1 ||
+            u_in_cur_pixel < 1 ||
+            u_in_cur_pixel >
+            depth_img2.rows - 1) // out of sight in current frame
         {
             _error(0, 0) = 0.0;
             _error(1, 0) = 0.0;
@@ -149,16 +161,21 @@ public:
 
     }
 
-    void linearizeOplus() override // 重写线性化函数，即得到泰勒展开e(x+delta_x)=e(x)+J^T*delta_x中的J，推导过程见14讲7.3.3
+    void
+    linearizeOplus() override // 重写线性化函数，即得到泰勒展开e(x+delta_x)=e(x)+J^T*delta_x中的J，推导过程见14讲7.3.3
     {
         const VertexPose *v = dynamic_cast<VertexPose *>(_vertices[0]);
         Sophus::SE3d T = v->estimate();
         Eigen::Vector3d position_in_ref_cam = depth_ref *
-                                              Eigen::Vector3d((px_ref[0] - cx) / fx, (px_ref[1] - cy) / fy,
-                                                              1); // 深度乘以归一化坐标就得到了相机坐标系下的三维点
+                                              Eigen::Vector3d(
+                                                      (px_ref[0] - cx) / fx,
+                                                      (px_ref[1] - cy) / fy,
+                                                      1); // 深度乘以归一化坐标就得到了相机坐标系下的三维点
         Eigen::Vector3d position_in_cur_cam = T * position_in_ref_cam;
-        double u_in_cur_pixel = fx * position_in_cur_cam[0] / position_in_cur_cam[2] + cx;
-        double v_in_cur_pixel = fy * position_in_cur_cam[1] / position_in_cur_cam[2] + cy;
+        double u_in_cur_pixel =
+                fx * position_in_cur_cam[0] / position_in_cur_cam[2] + cx;
+        double v_in_cur_pixel =
+                fy * position_in_cur_cam[1] / position_in_cur_cam[2] + cy;
 
         Eigen::Matrix<double, 1, 6> J_1, J_2, J_position_xi_Z;
         double X = position_in_cur_cam[0], Y = position_in_cur_cam[1], Z = position_in_cur_cam[2];
@@ -191,13 +208,27 @@ public:
                 0.5 * (GetPixelValue(img2, u_in_cur_pixel + 1, v_in_cur_pixel) -
                        GetPixelValue(img2, u_in_cur_pixel - 1, v_in_cur_pixel)),
                 0.5 * (GetPixelValue(img2, u_in_cur_pixel, v_in_cur_pixel + 1) -
-                       GetPixelValue(img2, u_in_cur_pixel, v_in_cur_pixel - 1)));
+                       GetPixelValue(img2, u_in_cur_pixel,
+                                     v_in_cur_pixel - 1)));
 
         J_depth_gradient = Eigen::Vector2d(
-                0.5 * (GetPixelValue(depth_img2, u_in_cur_pixel + 1, v_in_cur_pixel) -
-                       GetPixelValue(depth_img2, u_in_cur_pixel - 1, v_in_cur_pixel)),
-                0.5 * (GetPixelValue(depth_img2, u_in_cur_pixel, v_in_cur_pixel + 1) -
-                       GetPixelValue(depth_img2, u_in_cur_pixel, v_in_cur_pixel - 1)));
+                0.5 * (static_cast<unsigned short>(depth_img2.data[
+                        (int(u_in_cur_pixel) + 1) *
+                        depth_img2.step +
+                        int(v_in_cur_pixel)]) -
+                       static_cast<unsigned short>(depth_img2.data[
+                               (int(u_in_cur_pixel) - 1) *
+                               depth_img2.step +
+                               int(v_in_cur_pixel)])),
+                0.5 *
+                ((static_cast<unsigned short>(depth_img2.data[
+                        int(u_in_cur_pixel) *
+                        depth_img2.step +
+                        (int(v_in_cur_pixel) + 1)]) -
+                  static_cast<unsigned short>(depth_img2.data[
+                          int(u_in_cur_pixel) *
+                          depth_img2.step +
+                          (int(v_in_cur_pixel) - 1)]))));
 
         J_1 = (J_color_gradient.transpose() * J_position_xi);
         J_2 = (J_depth_gradient.transpose() * J_position_xi) - J_position_xi_Z;
@@ -253,15 +284,20 @@ int main() {
     std::ifstream image_stamps(dataset_path_ + "/associated.txt");
     vector<cv::Mat> depth_images_, color_images_;
     if (!image_stamps) {
-        std::cout << "cannot find " << dataset_path_ << "/associated.txt" << std::endl;
+        std::cout << "cannot find " << dataset_path_ << "/associated.txt"
+                  << std::endl;
     } else // file exists
     {
         std::string line;
         while (getline(image_stamps, line)) {
             std::vector<std::string> each_in_line;
             tokenize(line, ' ', each_in_line);
-            depth_images_.push_back(cv::imread((dataset_path_ + "/" + each_in_line[3]), cv::IMREAD_UNCHANGED));
-            color_images_.push_back(cv::imread((dataset_path_ + "/" + each_in_line[1]), cv::IMREAD_COLOR));
+            depth_images_.push_back(
+                    cv::imread((dataset_path_ + "/" + each_in_line[3]),
+                               cv::IMREAD_UNCHANGED));
+            color_images_.push_back(
+                    cv::imread((dataset_path_ + "/" + each_in_line[1]),
+                               cv::IMREAD_COLOR));
         }
     }
     image_stamps.close();
@@ -270,7 +306,7 @@ int main() {
     vector<VecVector2d> pixels_refs;
     vector<vector<double>> depth_refs;
     // generate pixels in ref and load depth data
-    for (int i = 0; i < depth_images_.size()-1; i++) {
+    for (int i = 0; i < depth_images_.size() - 1; i++) {
         VecVector2d pixels_ref;
         vector<double> depth_ref;
         for (int k = 0; k < color_images_[i].rows; k++) {
@@ -294,14 +330,16 @@ int main() {
     Sophus::SE3d T_0;
     poses.push_back(T_0);
 
-    DirectPoseEstimationSingleLayer(color_images_[0], color_images_[1], pixels_refs[0],
+    DirectPoseEstimationSingleLayer(color_images_[0], color_images_[1],
+                                    pixels_refs[0],
                                     depth_refs[0],
                                     depth_images_[1],
                                     T_cur_ref);
     poses.push_back(T_cur_ref);
 
-    for (int i = 2; i < depth_images_.size()-1; i++) {
-        DirectPoseEstimationSingleLayer(color_images_[i - 1], color_images_[i], pixels_refs[i - 1],
+    for (int i = 2; i < depth_images_.size() - 1; i++) {
+        DirectPoseEstimationSingleLayer(color_images_[i - 1], color_images_[i],
+                                        pixels_refs[i - 1],
                                         depth_refs[i - 1],
                                         depth_images_[i],
                                         T_cur_ref);
@@ -310,8 +348,8 @@ int main() {
 //                                       T_cur_ref);
         //poses.push_back(T_cur_ref);
         poses.push_back(T_cur_ref * poses[i - 1]);
-        cout << "T"<< i-1 <<"= \n"
-                << (T_cur_ref * poses[i - 1]).matrix() << endl;
+        cout << "T" << i - 1 << "= \n"
+             << (T_cur_ref * poses[i - 1]).matrix() << endl;
     }
     cout << "poses calculated" << endl;
 
@@ -319,7 +357,7 @@ int main() {
     vector<Vector6d, Eigen::aligned_allocator<Vector6d>> pointcloud;
     pointcloud.reserve(1000000);
 
-    for (int i = 0; i < depth_images_.size()-1; i++) {
+    for (int i = 0; i < depth_images_.size() - 1; i++) {
         cout << "generating point cloud: " << i + 1 << endl;
         cv::Mat color = color_images_[i];
         cv::Mat depth = depth_images_[i];
@@ -338,9 +376,12 @@ int main() {
                 Eigen::Vector3d pointWorld = T * point;
                 Vector6d p;
                 p.head<3>() = pointWorld;
-                p[5] = color.data[v * color.step + u * color.channels()];     // blue
-                p[4] = color.data[v * color.step + u * color.channels() + 1]; // green
-                p[3] = color.data[v * color.step + u * color.channels() + 2]; // red
+                p[5] = color.data[v * color.step +
+                                  u * color.channels()];     // blue
+                p[4] = color.data[v * color.step + u * color.channels() +
+                                  1]; // green
+                p[3] = color.data[v * color.step + u * color.channels() +
+                                  2]; // red
                 pointcloud.push_back(p);
             }
     }
@@ -362,7 +403,8 @@ void DirectPoseEstimationSingleLayer(
     typedef g2o::LinearSolverDense<BlockSolverType::PoseMatrixType> LinearSolverType; // 线性求解器类型
     // 梯度下降方法，可以从GN, LM, DogLeg 中选
     auto solver = new g2o::OptimizationAlgorithmGaussNewton(
-            g2o::make_unique<BlockSolverType>(g2o::make_unique<LinearSolverType>()));
+            g2o::make_unique<BlockSolverType>(
+                    g2o::make_unique<LinearSolverType>()));
     g2o::SparseOptimizer optimizer; // 图模型
     optimizer.setAlgorithm(solver); // 设置求解器
     optimizer.setVerbose(false);    // 打开调试输出
@@ -378,20 +420,25 @@ void DirectPoseEstimationSingleLayer(
 
     //新增部分：第一个相机作为顶点连接的边
     for (size_t i = 0; i < px_ref.size(); ++i) {
-        EdgeProjectionPoseOnly *edge = new EdgeProjectionPoseOnly(img1, img2, px_ref[i], depth_ref[i],
+        EdgeProjectionPoseOnly *edge = new EdgeProjectionPoseOnly(img1, img2,
+                                                                  px_ref[i],
+                                                                  depth_ref[i],
                                                                   depth_img2);
         edge->setId(index);
         edge->setVertex(0, vertex_pose);
 
-        Eigen::Vector3d position_in_ref_cam = depth_ref[i] * Eigen::Vector3d((px_ref[i][0] - cx) / fx,
-                                                                             (px_ref[i][1] - cy) / fy,
-                                                                             1); // 深度乘以归一化坐标就得到了相机坐标系下的三维点
-        Eigen::Vector3d position_in_cur_cam = vertex_pose->estimate() * position_in_ref_cam;
+        Eigen::Vector3d position_in_ref_cam =
+                depth_ref[i] * Eigen::Vector3d((px_ref[i][0] - cx) / fx,
+                                               (px_ref[i][1] - cy) / fy,
+                                               1); // 深度乘以归一化坐标就得到了相机坐标系下的三维点
+        Eigen::Vector3d position_in_cur_cam =
+                vertex_pose->estimate() * position_in_ref_cam;
         // double u_in_cur_pixel = fx * position_in_cur_cam[0] / position_in_cur_cam[2] + cx;
         // double v_in_cur_pixel = fy * position_in_cur_cam[1] / position_in_cur_cam[2] + cy;
 
         Eigen::Matrix<double, 2, 1> measurements;
-        measurements << GetPixelValue(img1, px_ref[i][0], px_ref[i][1]), position_in_cur_cam[2];
+        measurements << GetPixelValue(img1, px_ref[i][0],
+                                      px_ref[i][1]), position_in_cur_cam[2];
         //cout<<"measurements: " <<measurements<<endl;
         edge->setMeasurement(measurements);
         edge->setInformation(Eigen::Matrix<double, 2, 2>::Identity());
@@ -400,7 +447,7 @@ void DirectPoseEstimationSingleLayer(
     }
 
     optimizer.initializeOptimization();
-    optimizer.optimize(10);
+    optimizer.optimize(3);
     T21 = vertex_pose->estimate();
 
     // // plot the projected pixels here
@@ -465,11 +512,14 @@ void DirectPoseEstimationMultiLayer(
             cv::Mat img1_pyr, img2_pyr, depth_pyramid;
             // resize images according to pyramid level
             cv::resize(pyr1[i - 1], img1_pyr,
-                       cv::Size(pyr1[i - 1].cols * pyramid_scale, pyr1[i - 1].rows * pyramid_scale));
+                       cv::Size(pyr1[i - 1].cols * pyramid_scale,
+                                pyr1[i - 1].rows * pyramid_scale));
             cv::resize(pyr2[i - 1], img2_pyr,
-                       cv::Size(pyr2[i - 1].cols * pyramid_scale, pyr2[i - 1].rows * pyramid_scale));
-            cv::resize(depth_pyr2[i - 1], depth_pyramid, cv::Size(depth_pyr2[i - 1].cols * pyramid_scale,
-                                                                  depth_pyr2[i - 1].rows * pyramid_scale));
+                       cv::Size(pyr2[i - 1].cols * pyramid_scale,
+                                pyr2[i - 1].rows * pyramid_scale));
+            cv::resize(depth_pyr2[i - 1], depth_pyramid,
+                       cv::Size(depth_pyr2[i - 1].cols * pyramid_scale,
+                                depth_pyr2[i - 1].rows * pyramid_scale));
             pyr1.push_back(img1_pyr);
             pyr2.push_back(img2_pyr);
             depth_pyr2.push_back(depth_pyramid);
@@ -485,19 +535,23 @@ void DirectPoseEstimationMultiLayer(
         }
 
         // scale fx, fy, cx, cy in different pyramid levels
-        cout << "fxG: " << fxG << ", scale: " << scales[level] << ", level: " << level << endl;
+        cout << "fxG: " << fxG << ", scale: " << scales[level] << ", level: "
+             << level << endl;
         fx = fxG * scales[level];
         fy = fyG * scales[level];
         cx = cxG * scales[level];
         cy = cyG * scales[level];
         // cout << "into signal layer Direct method" << endl;
-        cout << "fx,fy,cx,cy: " << fx << ", " << fy << ", " << cx << ", " << cy << ", " << endl;
-        DirectPoseEstimationSingleLayer(pyr1[level], pyr2[level], px_ref_pyr, depth_ref, depth_pyr2[level],
+        cout << "fx,fy,cx,cy: " << fx << ", " << fy << ", " << cx << ", " << cy
+             << ", " << endl;
+        DirectPoseEstimationSingleLayer(pyr1[level], pyr2[level], px_ref_pyr,
+                                        depth_ref, depth_pyr2[level],
                                         T21);
     }
 }
 
-void showPointCloud(const vector<Vector6d, Eigen::aligned_allocator<Vector6d>> &pointcloud) {
+void showPointCloud(
+        const vector<Vector6d, Eigen::aligned_allocator<Vector6d>> &pointcloud) {
 
     if (pointcloud.empty()) {
         cerr << "Point cloud is empty!" << endl;
@@ -510,11 +564,13 @@ void showPointCloud(const vector<Vector6d, Eigen::aligned_allocator<Vector6d>> &
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     pangolin::OpenGlRenderState s_cam(
-            pangolin::ProjectionMatrix(1024, 768, 500, 500, 512, 389, 0.1, 1000),
+            pangolin::ProjectionMatrix(1024, 768, 500, 500, 512, 389, 0.1,
+                                       1000),
             pangolin::ModelViewLookAt(0, -0.1, -1.8, 0, 0, 0, 0.0, -1.0, 0.0));
 
     pangolin::View &d_cam = pangolin::CreateDisplay()
-            .SetBounds(0.0, 1.0, pangolin::Attach::Pix(175), 1.0, -1024.0f / 768.0f)
+            .SetBounds(0.0, 1.0, pangolin::Attach::Pix(175), 1.0,
+                       -1024.0f / 768.0f)
             .SetHandler(new pangolin::Handler3D(s_cam));
 
     while (pangolin::ShouldQuit() == false) {
