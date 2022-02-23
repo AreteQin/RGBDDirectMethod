@@ -99,144 +99,72 @@ public:
     bool write(ostream &out) const override {}
 };
 
-/// 定义仅优化位姿的一元边，2表示观测值的维度，Vec2表示观测值的数据类型是一个2×1的向量，VertexPose表示定点的数据类型
-class EdgeProjectionPoseOnly : public g2o::BaseUnaryEdge<2, Vec2, VertexPose> {
+//1元边，测量值维度是1,对应测量值类型为灰度差，顶点对应的数据类型都是VertexPose
+class EdgeProjection : public g2o::BaseUnaryEdge<1, double, VertexPose> {
 public:
-    EdgeProjectionPoseOnly(const cv::Mat &img1_,
-                           const cv::Mat &img2_,
-                           const Eigen::Vector2d &px_ref_,
-                           const double &depth_ref_,
-                           const cv::Mat &depth_img2_) : img1(img1_),
-                                                         img2(img2_),
-                                                         px_ref(px_ref_),
-                                                         depth_ref(depth_ref_),
-                                                         depth_img2(
-                                                                 depth_img2_) {}
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
 
-    void computeError() override {
-        const VertexPose *v = dynamic_cast<VertexPose *>(_vertices[0]); // _vertices[0]表示这条边所链接的地一个顶点，由于是一元边，因此只有_vertices[0]，若是二元边则还会存在_vertices[1]
+    EdgeProjection(const Eigen::Vector2d &px_ref, const double depth_ref, const cv::Mat img1, const cv::Mat img2)
+            : _px_ref(px_ref), _depth_ref(depth_ref), _img1(img1), _img2(img2) {}
+
+    virtual void computeError() override {
+        const VertexPose *v = static_cast<VertexPose *> (_vertices[0]);
         Sophus::SE3d T = v->estimate();
-        Eigen::Vector3d position_in_ref_cam = depth_ref *
-                                              Eigen::Vector3d(
-                                                      (px_ref[0] - cx) / fx,
-                                                      (px_ref[1] - cy) / fy,
-                                                      1); // 深度乘以归一化坐标就得到了相机坐标系下的三维点
-        Eigen::Vector3d position_in_cur_cam = T * position_in_ref_cam;
-        // cout<<"position_in_cur_cam: "<<endl<<position_in_cur_cam<<endl;
-        // cout<< fx <<", "<<position_in_cur_cam[1] <<", "<<position_in_cur_cam[2]<<", "<< cx<<endl;
-        double u_in_cur_pixel =
-                fx * position_in_cur_cam[1] / position_in_cur_cam[2] + cx;
-        double v_in_cur_pixel =
-                fy * position_in_cur_cam[0] / position_in_cur_cam[2] + cy;
-        double I2 = GetPixelValue(img2, u_in_cur_pixel, v_in_cur_pixel);
-        double Z2 = static_cast<unsigned short>(depth_img2.data[
-                int(u_in_cur_pixel) * depth_img2.step +
-                int(v_in_cur_pixel)]);
-        if (v_in_cur_pixel < 1 || v_in_cur_pixel > depth_img2.cols - 1 ||
-            u_in_cur_pixel < 1 ||
-            u_in_cur_pixel >
-            depth_img2.rows - 1) // out of sight in current frame
-        {
-            _error(0, 0) = 0.0;
-            _error(1, 0) = 0.0;
-        } else if (Z2 < 1 || Z2 > 255) {
-            _error(0, 0) = I2 - _measurement(0, 0);
-            _error(1, 0) = 0;
-        } else {
-            _error(0, 0) = I2 - _measurement(0, 0);
-            _error(1, 0) = Z2 - _measurement(1, 0);
-        }
-        // _error(0, 0) = I2 - _measurement(0, 0);
-        // _error(1, 0) = 10 * (depth_in_cur_cam_ - position_in_cur_cam[2]);
-        // std::cout << _error(0, 0) << ", " << _error(1, 0) << ". "<<std::endl;
-        _error(1, 0) = TukeysBiweight(_error(1, 0), 20);
-        _error(0, 0) = TukeysBiweight(_error(0, 0), 50);
-        //     std::cout<<"current_depth_.col, row: "<<depth_img2.cols<<", "<<depth_img2.rows<<std::endl;
-        //     std::cout<<"u,v: "<<u_in_cur_pixel<<", "<<v_in_cur_pixel<<std::endl;
-        //     std::cout<<"I1: "<<_measurement(0,0)<<std::endl;
-        //     std::cout<<"I2: "<<I2<<std::endl;
-        //     std::cout<<"Zwrap: "<<_measurement(1,0)<<std::endl;
-        //     std::cout<<"Z2: "<<Z2<<std::endl;
-        //     std::cout <<"errors_tukeys: "<< _error(0, 0) << ", " << _error(1, 0) << ". "<<std::endl;
-
+        Eigen::Vector3d point_ref =_depth_ref * Eigen::Vector3d((_px_ref[0] - cx) / fx, (_px_ref[1] - cy) / fy, 1);
+        Eigen::Vector3d point_cur = T * point_ref;
+        double u1 = fx * point_cur[0] / point_cur[2] + cx, v1 = fy * point_cur[1] / point_cur[2] + cy;
+        _error(0, 0) = _measurement - GetPixelValue(_img2, u1, v1);
     }
 
-    void
-    linearizeOplus() override // 重写线性化函数，即得到泰勒展开e(x+delta_x)=e(x)+J^T*delta_x中的J，推导过程见14讲7.3.3
-    {
-        const VertexPose *v = dynamic_cast<VertexPose *>(_vertices[0]);
+    virtual void linearizeOplus() override {
+        const VertexPose *v = static_cast<VertexPose *> (_vertices[0]);
         Sophus::SE3d T = v->estimate();
-        Eigen::Vector3d position_in_ref_cam = depth_ref *
-                                              Eigen::Vector3d(
-                                                      (px_ref[0] - cx) / fx,
-                                                      (px_ref[1] - cy) / fy,
-                                                      1); // 深度乘以归一化坐标就得到了相机坐标系下的三维点
-        Eigen::Vector3d position_in_cur_cam = T * position_in_ref_cam;
-        double u_in_cur_pixel =
-                fx * position_in_cur_cam[0] / position_in_cur_cam[2] + cx;
-        double v_in_cur_pixel =
-                fy * position_in_cur_cam[1] / position_in_cur_cam[2] + cy;
+        Eigen::Vector3d point_ref =_depth_ref * Eigen::Vector3d((_px_ref[0] - cx) / fx, (_px_ref[1] - cy) / fy, 1);
+        Eigen::Vector3d point_cur = T * point_ref;
+        double u1 = fx * point_cur[0] / point_cur[2] + cx, v1 = fy * point_cur[1] / point_cur[2] + cy;
 
-        Eigen::Matrix<double, 1, 6> J_1, J_2, J_position_xi_Z;
-        double X = position_in_cur_cam[0], Y = position_in_cur_cam[1], Z = position_in_cur_cam[2];
+        Eigen::Matrix<double, 6, 1> J;
+
+        double X = point_cur[0], Y = point_cur[1], Z = point_cur[2];
         double Z2 = Z * Z, Z_inv = 1.0 / Z, Z2_inv = Z_inv * Z_inv;
-        Matrix26d J_position_xi;
-        Eigen::Vector2d J_color_gradient, J_depth_gradient;
 
-        J_position_xi(0, 0) = fx * Z_inv;
-        J_position_xi(0, 1) = 0;
-        J_position_xi(0, 2) = -fx * X * Z2_inv;
-        J_position_xi(0, 3) = -fx * X * Y * Z2_inv;
-        J_position_xi(0, 4) = fx + fx * X * X * Z2_inv;
-        J_position_xi(0, 5) = -fx * Y * Z_inv;
+        Matrix26d J_pixel_xi;
+        Eigen::Vector2d J_img_pixel;
 
-        J_position_xi(1, 0) = 0;
-        J_position_xi(1, 1) = fy * Z_inv;
-        J_position_xi(1, 2) = -fy * Y * Z2_inv;
-        J_position_xi(1, 3) = -fy - fy * Y * Y * Z2_inv;
-        J_position_xi(1, 4) = fy * X * Y * Z2_inv;
-        J_position_xi(1, 5) = fy * X * Z_inv;
+        J_pixel_xi(0, 0) = fx * Z_inv;
+        J_pixel_xi(0, 1) = 0;
+        J_pixel_xi(0, 2) = -fx * X * Z2_inv;
+        J_pixel_xi(0, 3) = -fx * X * Y * Z2_inv;
+        J_pixel_xi(0, 4) = fx + fx * X * X * Z2_inv;
+        J_pixel_xi(0, 5) = -fx * Y * Z_inv;
 
-        J_position_xi_Z(0, 0) = 0;
-        J_position_xi_Z(0, 1) = 0;
-        J_position_xi_Z(0, 2) = 1;
-        J_position_xi_Z(0, 3) = -Y;
-        J_position_xi_Z(0, 4) = X;
-        J_position_xi_Z(0, 5) = 0;
+        J_pixel_xi(1, 0) = 0;
+        J_pixel_xi(1, 1) = fy * Z_inv;
+        J_pixel_xi(1, 2) = -fy * Y * Z2_inv;
+        J_pixel_xi(1, 3) = -fy - fy * Y * Y * Z2_inv;
+        J_pixel_xi(1, 4) = fy * X * Y * Z2_inv;
+        J_pixel_xi(1, 5) = fy * X * Z_inv;
 
-        J_color_gradient = Eigen::Vector2d(
-                0.5 * (GetPixelValue(img2, u_in_cur_pixel + 1, v_in_cur_pixel) -
-                       GetPixelValue(img2, u_in_cur_pixel - 1, v_in_cur_pixel)),
-                0.5 * (GetPixelValue(img2, u_in_cur_pixel, v_in_cur_pixel + 1) -
-                       GetPixelValue(img2, u_in_cur_pixel,
-                                     v_in_cur_pixel - 1)));
-
-        J_depth_gradient = Eigen::Vector2d(
-                0.5 * depth_img2.ptr<unsigned short>
-                        (int(u_in_cur_pixel) + 1)[int(v_in_cur_pixel)] -
-                        depth_img2.ptr<unsigned short>
-                        (int(u_in_cur_pixel) - 1)[int(v_in_cur_pixel)],
-                0.5 *depth_img2.ptr<unsigned short>
-                        (int(u_in_cur_pixel))[int(v_in_cur_pixel) + 1] -
-                        depth_img2.ptr<unsigned short>
-                        (int(u_in_cur_pixel))[int(v_in_cur_pixel) - 1]);
-
-        J_1 = (J_color_gradient.transpose() * J_position_xi);
-        J_2 = (J_depth_gradient.transpose() * J_position_xi) - J_position_xi_Z;
+        J_img_pixel = Eigen::Vector2d(
+                0.5 * (GetPixelValue(_img2, u1 + 1 , v1 ) - GetPixelValue(_img2, u1 - 1 , v1 )),
+                0.5 * (GetPixelValue(_img2, u1 , v1 + 1 ) - GetPixelValue(_img2, u1 , v1 - 1 ))
+        );
 
         // total jacobian
-        _jacobianOplusXi << J_1[0], J_1[1], J_1[2], J_1[3], J_1[4], J_1[5],
-                J_2[0], J_2[1], J_2[2], J_2[3], J_2[4], J_2[5];
+        J = -1.0 * (J_img_pixel.transpose() * J_pixel_xi).transpose();
+
+        _jacobianOplusXi << J[0], J[1], J[2], J[3], J[4], J[5];
     }
 
-    bool read(istream &in) override {}
+    virtual bool read(istream &in) override {}
 
-    bool write(ostream &out) const override {}
+    virtual bool write(ostream &out) const override {}
 
 private:
-    const Eigen::Vector2d px_ref;
-    const double depth_ref;
-    const cv::Mat img1, img2, depth_img2;
+    const Eigen::Vector2d _px_ref;
+    const double _depth_ref;
+    const cv::Mat _img1;
+    const cv::Mat _img2;
 };
 
 void DirectPoseEstimationMultiLayer(
@@ -411,10 +339,7 @@ void DirectPoseEstimationSingleLayer(
 
     //新增部分：第一个相机作为顶点连接的边
     for (size_t i = 0; i < px_ref.size(); ++i) {
-        EdgeProjectionPoseOnly *edge = new EdgeProjectionPoseOnly(img1, img2,
-                                                                  px_ref[i],
-                                                                  depth_ref[i],
-                                                                  depth_img2);
+        EdgeProjection *edge = new EdgeProjection(px_ref[i], depth_ref[i], img1, img2);
         edge->setId(index);
         edge->setVertex(0, vertex_pose);
 
@@ -427,12 +352,11 @@ void DirectPoseEstimationSingleLayer(
         // double u_in_cur_pixel = fx * position_in_cur_cam[0] / position_in_cur_cam[2] + cx;
         // double v_in_cur_pixel = fy * position_in_cur_cam[1] / position_in_cur_cam[2] + cy;
 
-        Eigen::Matrix<double, 2, 1> measurements;
-        measurements << GetPixelValue(img1, px_ref[i][0],
-                                      px_ref[i][1]), position_in_cur_cam[2];
+        double measurements;
+        measurements = GetPixelValue(img1, px_ref[i][0],px_ref[i][1]);
         //cout<<"measurements: " <<measurements<<endl;
         edge->setMeasurement(measurements);
-        edge->setInformation(Eigen::Matrix<double, 2, 2>::Identity());
+        edge->setInformation(Eigen::Matrix<double, 1,1>::Identity());
         optimizer.addEdge(edge);
         index++;
     }

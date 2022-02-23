@@ -212,14 +212,23 @@ public:
                                      v_in_cur_pixel - 1)));
 
         J_depth_gradient = Eigen::Vector2d(
-                0.5 * depth_img2.ptr<unsigned short>
-                        (int(u_in_cur_pixel) + 1)[int(v_in_cur_pixel)] -
-                        depth_img2.ptr<unsigned short>
-                        (int(u_in_cur_pixel) - 1)[int(v_in_cur_pixel)],
-                0.5 *depth_img2.ptr<unsigned short>
-                        (int(u_in_cur_pixel))[int(v_in_cur_pixel) + 1] -
-                        depth_img2.ptr<unsigned short>
-                        (int(u_in_cur_pixel))[int(v_in_cur_pixel) - 1]);
+                0.5 * (static_cast<unsigned short>(depth_img2.data[
+                        (int(u_in_cur_pixel) + 1) *
+                        depth_img2.step +
+                        int(v_in_cur_pixel)]) -
+                       static_cast<unsigned short>(depth_img2.data[
+                               (int(u_in_cur_pixel) - 1) *
+                               depth_img2.step +
+                               int(v_in_cur_pixel)])),
+                0.5 *
+                ((static_cast<unsigned short>(depth_img2.data[
+                        int(u_in_cur_pixel) *
+                        depth_img2.step +
+                        (int(v_in_cur_pixel) + 1)]) -
+                  static_cast<unsigned short>(depth_img2.data[
+                          int(u_in_cur_pixel) *
+                          depth_img2.step +
+                          (int(v_in_cur_pixel) - 1)]))));
 
         J_1 = (J_color_gradient.transpose() * J_position_xi);
         J_2 = (J_depth_gradient.transpose() * J_position_xi) - J_position_xi_Z;
