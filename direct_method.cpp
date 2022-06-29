@@ -82,10 +82,12 @@ double TukeysBiweight(double error, double threshold_c) {
 /// vertex used in g2o ba
 class VertexPose : public g2o::BaseVertex<6, Sophus::SE3d> {
 public:
+    // reset estimation
     void setToOriginImpl() override {
         _estimate = Sophus::SE3d();
     }
 
+    //  update estimation
     /// left multiplication on SE3
     void oplusImpl(const double *update) override {
         Eigen::Matrix<double, 6, 1> update_eigen;

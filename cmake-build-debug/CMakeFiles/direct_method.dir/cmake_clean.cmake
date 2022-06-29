@@ -1,5 +1,6 @@
 file(REMOVE_RECURSE
   "CMakeFiles/direct_method.dir/direct_method.cpp.o"
+  "CMakeFiles/direct_method.dir/direct_method.cpp.o.d"
   "direct_method"
   "direct_method.pdb"
 )

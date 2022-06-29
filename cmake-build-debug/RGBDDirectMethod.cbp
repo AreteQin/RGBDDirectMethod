@@ -8,38 +8,18 @@
 		<Option virtualFolders="CMake Files\;CMake Files\..\;CMake Files\..\..\;CMake Files\..\..\..\;CMake Files\..\..\..\..\;CMake Files\..\..\..\..\usr\;CMake Files\..\..\..\..\usr\lib\;CMake Files\..\..\..\..\usr\lib\x86_64-linux-gnu\;CMake Files\..\..\..\..\usr\lib\x86_64-linux-gnu\cmake\;CMake Files\..\..\..\..\usr\lib\x86_64-linux-gnu\cmake\opencv4\;CMake Files\..\..\..\..\usr\lib\cmake\;CMake Files\..\..\..\..\usr\lib\cmake\eigen3\;CMake Files\..\..\..\..\usr\local\;CMake Files\..\..\..\..\usr\local\share\;CMake Files\..\..\..\..\usr\local\share\sophus\;CMake Files\..\..\..\..\usr\local\share\sophus\cmake\;CMake Files\..\..\Pangolin\;CMake Files\..\..\Pangolin\build\;CMake Files\cmake_modules\;"/>
 		<Build>
 			<Target title="all">
-				<Option working_dir="/home/qin/Ubuntu/RGBDDirectMethod/cmake-build-debug"/>
+				<Option working_dir="/home/qin/Downloads/rgbd-direct-method-g2o/cmake-build-debug"/>
 				<Option type="4"/>
 				<MakeCommands>
-					<Build command="/usr/bin/make -j16 -f &quot;/home/qin/Ubuntu/RGBDDirectMethod/cmake-build-debug/Makefile&quot;  VERBOSE=1 all"/>
-					<CompileFile command="/usr/bin/make -j16 -f &quot;/home/qin/Ubuntu/RGBDDirectMethod/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
-					<Clean command="/usr/bin/make -j16 -f &quot;/home/qin/Ubuntu/RGBDDirectMethod/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
-					<DistClean command="/usr/bin/make -j16 -f &quot;/home/qin/Ubuntu/RGBDDirectMethod/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
-				</MakeCommands>
-			</Target>
-			<Target title="rebuild_cache">
-				<Option working_dir="/home/qin/Ubuntu/RGBDDirectMethod/cmake-build-debug"/>
-				<Option type="4"/>
-				<MakeCommands>
-					<Build command="/usr/bin/make -j16 -f &quot;/home/qin/Ubuntu/RGBDDirectMethod/cmake-build-debug/Makefile&quot;  VERBOSE=1 rebuild_cache"/>
-					<CompileFile command="/usr/bin/make -j16 -f &quot;/home/qin/Ubuntu/RGBDDirectMethod/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
-					<Clean command="/usr/bin/make -j16 -f &quot;/home/qin/Ubuntu/RGBDDirectMethod/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
-					<DistClean command="/usr/bin/make -j16 -f &quot;/home/qin/Ubuntu/RGBDDirectMethod/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
-				</MakeCommands>
-			</Target>
-			<Target title="edit_cache">
-				<Option working_dir="/home/qin/Ubuntu/RGBDDirectMethod/cmake-build-debug"/>
-				<Option type="4"/>
-				<MakeCommands>
-					<Build command="/usr/bin/make -j16 -f &quot;/home/qin/Ubuntu/RGBDDirectMethod/cmake-build-debug/Makefile&quot;  VERBOSE=1 edit_cache"/>
-					<CompileFile command="/usr/bin/make -j16 -f &quot;/home/qin/Ubuntu/RGBDDirectMethod/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
-					<Clean command="/usr/bin/make -j16 -f &quot;/home/qin/Ubuntu/RGBDDirectMethod/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
-					<DistClean command="/usr/bin/make -j16 -f &quot;/home/qin/Ubuntu/RGBDDirectMethod/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<Build command="/usr/bin/make -j16 -f &quot;/home/qin/Downloads/rgbd-direct-method-g2o/cmake-build-debug/Makefile&quot;  VERBOSE=1 all"/>
+					<CompileFile command="/usr/bin/make -j16 -f &quot;/home/qin/Downloads/rgbd-direct-method-g2o/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j16 -f &quot;/home/qin/Downloads/rgbd-direct-method-g2o/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j16 -f &quot;/home/qin/Downloads/rgbd-direct-method-g2o/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
 				</MakeCommands>
 			</Target>
 			<Target title="direct_method">
-				<Option output="/home/qin/Ubuntu/RGBDDirectMethod/cmake-build-debug/direct_method" prefix_auto="0" extension_auto="0"/>
-				<Option working_dir="/home/qin/Ubuntu/RGBDDirectMethod/cmake-build-debug"/>
+				<Option output="/home/qin/Downloads/rgbd-direct-method-g2o/cmake-build-debug/direct_method" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/home/qin/Downloads/rgbd-direct-method-g2o/cmake-build-debug"/>
 				<Option object_output="./"/>
 				<Option type="1"/>
 				<Option compiler="gcc"/>
@@ -48,7 +28,7 @@
 					<Add option="-D_LINUX_"/>
 					<Add option="-DHAVE_EIGEN"/>
 					<Add option="-DHAVE_GLEW"/>
-					<Add option="-DPANGO_DEFAULT_WIN_URI=&quot;x11&quot;"/>
+					<Add option="-DPANGO_DEFAULT_WIN_URI=&quot;wayland&quot;"/>
 					<Add option="-DHAVE_PYTHON"/>
 					<Add option="-DSOPHUS_USE_BASIC_LOGGING=1"/>
 					<Add directory="/usr/include/opencv4"/>
@@ -78,15 +58,15 @@
 					<Add directory="/usr/include"/>
 				</Compiler>
 				<MakeCommands>
-					<Build command="/usr/bin/make -j16 -f &quot;/home/qin/Ubuntu/RGBDDirectMethod/cmake-build-debug/Makefile&quot;  VERBOSE=1 direct_method"/>
-					<CompileFile command="/usr/bin/make -j16 -f &quot;/home/qin/Ubuntu/RGBDDirectMethod/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
-					<Clean command="/usr/bin/make -j16 -f &quot;/home/qin/Ubuntu/RGBDDirectMethod/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
-					<DistClean command="/usr/bin/make -j16 -f &quot;/home/qin/Ubuntu/RGBDDirectMethod/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<Build command="/usr/bin/make -j16 -f &quot;/home/qin/Downloads/rgbd-direct-method-g2o/cmake-build-debug/Makefile&quot;  VERBOSE=1 direct_method"/>
+					<CompileFile command="/usr/bin/make -j16 -f &quot;/home/qin/Downloads/rgbd-direct-method-g2o/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j16 -f &quot;/home/qin/Downloads/rgbd-direct-method-g2o/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j16 -f &quot;/home/qin/Downloads/rgbd-direct-method-g2o/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
 				</MakeCommands>
 			</Target>
 			<Target title="direct_method/fast">
-				<Option output="/home/qin/Ubuntu/RGBDDirectMethod/cmake-build-debug/direct_method" prefix_auto="0" extension_auto="0"/>
-				<Option working_dir="/home/qin/Ubuntu/RGBDDirectMethod/cmake-build-debug"/>
+				<Option output="/home/qin/Downloads/rgbd-direct-method-g2o/cmake-build-debug/direct_method" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/home/qin/Downloads/rgbd-direct-method-g2o/cmake-build-debug"/>
 				<Option object_output="./"/>
 				<Option type="1"/>
 				<Option compiler="gcc"/>
@@ -95,7 +75,7 @@
 					<Add option="-D_LINUX_"/>
 					<Add option="-DHAVE_EIGEN"/>
 					<Add option="-DHAVE_GLEW"/>
-					<Add option="-DPANGO_DEFAULT_WIN_URI=&quot;x11&quot;"/>
+					<Add option="-DPANGO_DEFAULT_WIN_URI=&quot;wayland&quot;"/>
 					<Add option="-DHAVE_PYTHON"/>
 					<Add option="-DSOPHUS_USE_BASIC_LOGGING=1"/>
 					<Add directory="/usr/include/opencv4"/>
@@ -125,59 +105,79 @@
 					<Add directory="/usr/include"/>
 				</Compiler>
 				<MakeCommands>
-					<Build command="/usr/bin/make -j16 -f &quot;/home/qin/Ubuntu/RGBDDirectMethod/cmake-build-debug/Makefile&quot;  VERBOSE=1 direct_method/fast"/>
-					<CompileFile command="/usr/bin/make -j16 -f &quot;/home/qin/Ubuntu/RGBDDirectMethod/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
-					<Clean command="/usr/bin/make -j16 -f &quot;/home/qin/Ubuntu/RGBDDirectMethod/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
-					<DistClean command="/usr/bin/make -j16 -f &quot;/home/qin/Ubuntu/RGBDDirectMethod/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<Build command="/usr/bin/make -j16 -f &quot;/home/qin/Downloads/rgbd-direct-method-g2o/cmake-build-debug/Makefile&quot;  VERBOSE=1 direct_method/fast"/>
+					<CompileFile command="/usr/bin/make -j16 -f &quot;/home/qin/Downloads/rgbd-direct-method-g2o/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j16 -f &quot;/home/qin/Downloads/rgbd-direct-method-g2o/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j16 -f &quot;/home/qin/Downloads/rgbd-direct-method-g2o/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="edit_cache">
+				<Option working_dir="/home/qin/Downloads/rgbd-direct-method-g2o/cmake-build-debug"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j16 -f &quot;/home/qin/Downloads/rgbd-direct-method-g2o/cmake-build-debug/Makefile&quot;  VERBOSE=1 edit_cache"/>
+					<CompileFile command="/usr/bin/make -j16 -f &quot;/home/qin/Downloads/rgbd-direct-method-g2o/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j16 -f &quot;/home/qin/Downloads/rgbd-direct-method-g2o/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j16 -f &quot;/home/qin/Downloads/rgbd-direct-method-g2o/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="rebuild_cache">
+				<Option working_dir="/home/qin/Downloads/rgbd-direct-method-g2o/cmake-build-debug"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j16 -f &quot;/home/qin/Downloads/rgbd-direct-method-g2o/cmake-build-debug/Makefile&quot;  VERBOSE=1 rebuild_cache"/>
+					<CompileFile command="/usr/bin/make -j16 -f &quot;/home/qin/Downloads/rgbd-direct-method-g2o/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j16 -f &quot;/home/qin/Downloads/rgbd-direct-method-g2o/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j16 -f &quot;/home/qin/Downloads/rgbd-direct-method-g2o/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
 				</MakeCommands>
 			</Target>
 		</Build>
-		<Unit filename="/home/qin/Ubuntu/RGBDDirectMethod/direct_method.cpp">
+		<Unit filename="/home/qin/Downloads/rgbd-direct-method-g2o/direct_method.cpp">
 			<Option target="direct_method"/>
 		</Unit>
-		<Unit filename="/home/qin/Ubuntu/RGBDDirectMethod/CMakeLists.txt">
+		<Unit filename="/home/qin/Downloads/rgbd-direct-method-g2o/CMakeLists.txt">
 			<Option virtualFolder="CMake Files\"/>
 		</Unit>
-		<Unit filename="/home/qin/Ubuntu/RGBDDirectMethod/../../../../usr/lib/x86_64-linux-gnu/cmake/opencv4/OpenCVConfig-version.cmake">
+		<Unit filename="/home/qin/Downloads/rgbd-direct-method-g2o/../../../../usr/lib/x86_64-linux-gnu/cmake/opencv4/OpenCVConfig-version.cmake">
 			<Option virtualFolder="CMake Files\..\..\..\..\usr\lib\x86_64-linux-gnu\cmake\opencv4\"/>
 		</Unit>
-		<Unit filename="/home/qin/Ubuntu/RGBDDirectMethod/../../../../usr/lib/x86_64-linux-gnu/cmake/opencv4/OpenCVConfig.cmake">
+		<Unit filename="/home/qin/Downloads/rgbd-direct-method-g2o/../../../../usr/lib/x86_64-linux-gnu/cmake/opencv4/OpenCVConfig.cmake">
 			<Option virtualFolder="CMake Files\..\..\..\..\usr\lib\x86_64-linux-gnu\cmake\opencv4\"/>
 		</Unit>
-		<Unit filename="/home/qin/Ubuntu/RGBDDirectMethod/../../../../usr/lib/x86_64-linux-gnu/cmake/opencv4/OpenCVModules-release.cmake">
+		<Unit filename="/home/qin/Downloads/rgbd-direct-method-g2o/../../../../usr/lib/x86_64-linux-gnu/cmake/opencv4/OpenCVModules-release.cmake">
 			<Option virtualFolder="CMake Files\..\..\..\..\usr\lib\x86_64-linux-gnu\cmake\opencv4\"/>
 		</Unit>
-		<Unit filename="/home/qin/Ubuntu/RGBDDirectMethod/../../../../usr/lib/x86_64-linux-gnu/cmake/opencv4/OpenCVModules.cmake">
+		<Unit filename="/home/qin/Downloads/rgbd-direct-method-g2o/../../../../usr/lib/x86_64-linux-gnu/cmake/opencv4/OpenCVModules.cmake">
 			<Option virtualFolder="CMake Files\..\..\..\..\usr\lib\x86_64-linux-gnu\cmake\opencv4\"/>
 		</Unit>
-		<Unit filename="/home/qin/Ubuntu/RGBDDirectMethod/../../../../usr/lib/cmake/eigen3/Eigen3Config.cmake">
+		<Unit filename="/home/qin/Downloads/rgbd-direct-method-g2o/../../../../usr/lib/cmake/eigen3/Eigen3Config.cmake">
 			<Option virtualFolder="CMake Files\..\..\..\..\usr\lib\cmake\eigen3\"/>
 		</Unit>
-		<Unit filename="/home/qin/Ubuntu/RGBDDirectMethod/../../../../usr/lib/cmake/eigen3/Eigen3ConfigVersion.cmake">
+		<Unit filename="/home/qin/Downloads/rgbd-direct-method-g2o/../../../../usr/lib/cmake/eigen3/Eigen3ConfigVersion.cmake">
 			<Option virtualFolder="CMake Files\..\..\..\..\usr\lib\cmake\eigen3\"/>
 		</Unit>
-		<Unit filename="/home/qin/Ubuntu/RGBDDirectMethod/../../../../usr/lib/cmake/eigen3/Eigen3Targets.cmake">
+		<Unit filename="/home/qin/Downloads/rgbd-direct-method-g2o/../../../../usr/lib/cmake/eigen3/Eigen3Targets.cmake">
 			<Option virtualFolder="CMake Files\..\..\..\..\usr\lib\cmake\eigen3\"/>
 		</Unit>
-		<Unit filename="/home/qin/Ubuntu/RGBDDirectMethod/../../../../usr/local/share/sophus/cmake/SophusConfig.cmake">
+		<Unit filename="/home/qin/Downloads/rgbd-direct-method-g2o/../../../../usr/local/share/sophus/cmake/SophusConfig.cmake">
 			<Option virtualFolder="CMake Files\..\..\..\..\usr\local\share\sophus\cmake\"/>
 		</Unit>
-		<Unit filename="/home/qin/Ubuntu/RGBDDirectMethod/../../../../usr/local/share/sophus/cmake/SophusConfigVersion.cmake">
+		<Unit filename="/home/qin/Downloads/rgbd-direct-method-g2o/../../../../usr/local/share/sophus/cmake/SophusConfigVersion.cmake">
 			<Option virtualFolder="CMake Files\..\..\..\..\usr\local\share\sophus\cmake\"/>
 		</Unit>
-		<Unit filename="/home/qin/Ubuntu/RGBDDirectMethod/../../../../usr/local/share/sophus/cmake/SophusTargets.cmake">
+		<Unit filename="/home/qin/Downloads/rgbd-direct-method-g2o/../../../../usr/local/share/sophus/cmake/SophusTargets.cmake">
 			<Option virtualFolder="CMake Files\..\..\..\..\usr\local\share\sophus\cmake\"/>
 		</Unit>
-		<Unit filename="/home/qin/Ubuntu/RGBDDirectMethod/../../Pangolin/build/PangolinConfig.cmake">
+		<Unit filename="/home/qin/Downloads/rgbd-direct-method-g2o/../../Pangolin/build/PangolinConfig.cmake">
 			<Option virtualFolder="CMake Files\..\..\Pangolin\build\"/>
 		</Unit>
-		<Unit filename="/home/qin/Ubuntu/RGBDDirectMethod/../../Pangolin/build/PangolinConfigVersion.cmake">
+		<Unit filename="/home/qin/Downloads/rgbd-direct-method-g2o/../../Pangolin/build/PangolinConfigVersion.cmake">
 			<Option virtualFolder="CMake Files\..\..\Pangolin\build\"/>
 		</Unit>
-		<Unit filename="/home/qin/Ubuntu/RGBDDirectMethod/../../Pangolin/build/PangolinTargets.cmake">
+		<Unit filename="/home/qin/Downloads/rgbd-direct-method-g2o/../../Pangolin/build/PangolinTargets.cmake">
 			<Option virtualFolder="CMake Files\..\..\Pangolin\build\"/>
 		</Unit>
-		<Unit filename="/home/qin/Ubuntu/RGBDDirectMethod/cmake_modules/FindG2O.cmake">
+		<Unit filename="/home/qin/Downloads/rgbd-direct-method-g2o/cmake_modules/FindG2O.cmake">
 			<Option virtualFolder="CMake Files\cmake_modules\"/>
 		</Unit>
 	</Project>
